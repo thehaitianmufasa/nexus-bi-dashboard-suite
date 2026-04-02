@@ -33,7 +33,7 @@ A collection of five production dashboards built for plant leadership and cross-
 
 ## Live Demo
 
-Visit the live portfolio at your GitHub Pages URL after deployment.
+**[View Live Portfolio](https://thehaitianmufasa.github.io/nexus-bi-dashboard-suite/)**
 
 ## Built By
 
