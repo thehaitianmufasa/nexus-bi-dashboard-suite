@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BI Dashboard Portfolio — Nexus Manufacturing Co.</title>
+
+<!-- Open Graph for LinkedIn -->
+<meta property="og:title" content="BI Dashboard Portfolio — Nexus Manufacturing Co.">
+<meta property="og:description" content="Enterprise Power BI Dashboard Suite built by Jeff Chery. Five production dashboards for calibration compliance, workforce planning, material variance, and vendor management.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="description" content="A suite of five production Power BI dashboards built for plant leadership and cross-functional teams. Built by Jeff Chery, Chery Solutions LLC.">
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f0f2f5;
+    color: #1a1a2e;
+    animation: fadeIn 0.5s ease-in;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  /* ── HERO ── */
+  .hero {
+    background: linear-gradient(135deg, #1a1a2e 0%, #162033 25%, #1a2435 50%, #1a1a2e 75%, #162033 100%);
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
+    padding: 80px 24px 60px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at 30% 50%, rgba(45,179,160,0.08) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 50%, rgba(176,28,46,0.06) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .hero-content { position: relative; z-index: 1; max-width: 800px; margin: 0 auto; }
+
+  .hero-badge {
+    display: inline-block;
+    background: rgba(45,179,160,0.15);
+    color: #2db3a0;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    border-radius: 20px;
+    margin-bottom: 24px;
+    border: 1px solid rgba(45,179,160,0.25);
+  }
+
+  .hero h1 {
+    font-size: 48px;
+    font-weight: 800;
+    color: white;
+    letter-spacing: -1px;
+    line-height: 1.1;
+    margin-bottom: 12px;
+  }
+
+  .hero .subtitle {
+    font-size: 18px;
+    color: rgba(255,255,255,0.6);
+    font-weight: 400;
+    margin-bottom: 20px;
+  }
+
+  .hero .description {
+    font-size: 15px;
+    color: rgba(255,255,255,0.45);
+    line-height: 1.7;
+    max-width: 600px;
+    margin: 0 auto 48px;
+  }
+
+  /* ── STAT COUNTERS ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    max-width: 700px;
+    margin: 0 auto 40px;
+  }
+
+  .stat-item {
+    text-align: center;
+    padding: 0 16px;
+    border-right: 1px solid rgba(255,255,255,0.1);
+  }
+  .stat-item:last-child { border-right: none; }
+
+  .stat-number {
+    font-size: 36px;
+    font-weight: 800;
+    color: white;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .stat-number .prefix { color: #2db3a0; }
+  .stat-number .suffix { font-size: 24px; color: rgba(255,255,255,0.5); font-weight: 600; }
+
+  .stat-label {
+    font-size: 11px;
+    color: rgba(255,255,255,0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-weight: 500;
+  }
+
+  .scroll-hint {
+    color: rgba(255,255,255,0.3);
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    transition: color 0.2s;
+  }
+  .scroll-hint:hover { color: rgba(255,255,255,0.6); }
+  .scroll-hint svg { animation: bounce 2s ease infinite; }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(6px); }
+  }
+
+  /* ── SECTION ── */
+  .section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 60px 24px;
+  }
+
+  .section-header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  .section-header h2 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a1a2e;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+  }
+  .section-header .line {
+    width: 48px;
+    height: 3px;
+    background: #2db3a0;
+    margin: 0 auto 12px;
+    border-radius: 2px;
+  }
+  .section-header p {
+    font-size: 14px;
+    color: #888;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  /* ── CARDS GRID ── */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+
+  .card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  .card.visible {
+    opacity: 1;
+    transform: translateY(0);
+    transition: transform 0.5s ease, box-shadow 0.3s ease, opacity 0.5s ease;
+  }
+  .card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 36px rgba(0,0,0,0.12);
+  }
+
+  .card-accent { height: 4px; }
+  .accent-navy { background: #1a1a2e; }
+  .accent-teal { background: #2db3a0; }
+  .accent-red { background: #b01c2e; }
+  .accent-steel { background: #5a9e96; }
+
+  .card-body { padding: 28px 24px; }
+
+  .card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+  }
+  .card-icon svg { width: 22px; height: 22px; }
+  .icon-navy { background: rgba(26,26,46,0.08); color: #1a1a2e; }
+  .icon-teal { background: rgba(45,179,160,0.1); color: #2db3a0; }
+  .icon-red { background: rgba(176,28,46,0.08); color: #b01c2e; }
+  .icon-steel { background: rgba(90,158,150,0.1); color: #5a9e96; }
+
+  .card h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 8px;
+    letter-spacing: -0.2px;
+  }
+  .card p {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+
+  .card-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #1a1a2e;
+    color: white;
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    transition: background 0.2s;
+  }
+  .card-btn:hover { background: #2a2a4e; }
+  .card-btn svg { width: 14px; height: 14px; }
+
+  /* ── TECH STACK ── */
+  .tech-section {
+    background: white;
+    border-top: 1px solid #e8eaed;
+    border-bottom: 1px solid #e8eaed;
+    padding: 32px 24px;
+    text-align: center;
+  }
+  .tech-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #aaa;
+    margin-bottom: 16px;
+  }
+  .tech-pills {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+  .tech-pill {
+    background: #f0f2f5;
+    color: #555;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    background: #1a1a2e;
+    padding: 40px 24px;
+    text-align: center;
+  }
+  .footer-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 8px;
+  }
+  .footer-company {
+    font-size: 13px;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 16px;
+  }
+  .footer-links {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .footer-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: rgba(255,255,255,0.4);
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+  .footer-link:hover { color: #2db3a0; }
+  .footer-link svg { width: 16px; height: 16px; }
+  .footer-meta {
+    font-size: 11px;
+    color: rgba(255,255,255,0.2);
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 1024px) {
+    .cards-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 32px; }
+    .hero .subtitle { font-size: 15px; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); gap: 24px; }
+    .stat-item { border-right: none; }
+    .stat-number { font-size: 28px; }
+    .cards-grid { grid-template-columns: 1fr; }
+    .section { padding: 40px 16px; }
+  }
+  @media (max-width: 480px) {
+    .hero { padding: 60px 16px 40px; }
+    .hero h1 { font-size: 26px; }
+    .stats-row { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ HERO ═══ -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">Enterprise Analytics</div>
+    <h1>BI Dashboard Portfolio</h1>
+    <p class="subtitle">Enterprise Power BI Dashboard Suite &mdash; Built by Jeff Chery</p>
+    <p class="description">A suite of five production dashboards built for plant leadership and cross-functional teams. Each dashboard replaced manual reporting &mdash; spreadsheets, Word documents, and email chains &mdash; with automated, real-time analytics connected to SharePoint cloud refresh.</p>
+
+    <div class="stats-row">
+      <div class="stat-item">
+        <div class="stat-number"><span class="counter" data-target="514">0</span><span class="suffix">+</span></div>
+        <div class="stat-label">Assets Tracked</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number"><span class="prefix">$</span><span class="counter" data-target="6">0</span><span class="suffix">M+</span></div>
+        <div class="stat-label">Losses Analyzed</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number"><span class="counter" data-target="70">0</span><span class="suffix">+</span></div>
+        <div class="stat-label">Vendors Managed</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number"><span class="counter" data-target="55">0</span><span class="suffix">+</span></div>
+        <div class="stat-label">Contracts Monitored</div>
+      </div>
+    </div>
+
+    <a href="#dashboards" class="scroll-hint">
+      Explore Dashboards
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+    </a>
+  </div>
+</section>
+
+<!-- ═══ DASHBOARD CARDS ═══ -->
+<section class="section" id="dashboards">
+  <div class="section-header">
+    <h2>Dashboard Suite</h2>
+    <div class="line"></div>
+    <p>Five dashboards covering calibration, workforce planning, material variance, and vendor compliance</p>
+  </div>
+
+  <div class="cards-grid">
+
+    <!-- Calibration Compliance -->
+    <div class="card">
+      <div class="card-accent accent-navy"></div>
+      <div class="card-body">
+        <div class="card-icon icon-navy">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <h3>Calibration Compliance</h3>
+        <p>Equipment calibration tracking across 514+ assets with compliance scoring, vendor breakdown, and certificate links. Replaced a monthly Excel report.</p>
+        <a href="calibration-compliance-dashboard.html" class="card-btn">View Dashboard <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+      </div>
+    </div>
+
+    <!-- Production Workforce -->
+    <div class="card">
+      <div class="card-accent accent-teal"></div>
+      <div class="card-body">
+        <div class="card-icon icon-teal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <h3>Production Workforce</h3>
+        <p>OEE man-hour capacity planning with weekly trend analysis and 40hr/50hr target tracking. Used for headcount and scheduling decisions.</p>
+        <a href="production-workforce-dashboard.html" class="card-btn">View Dashboard <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+      </div>
+    </div>
+
+    <!-- MUV Analysis -->
+    <div class="card">
+      <div class="card-accent accent-red"></div>
+      <div class="card-body">
+        <div class="card-icon icon-red">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <h3>MUV Analysis</h3>
+        <p>Material usage variance financial analysis tracking $6M+ in annual losses by reason code, production line, and new product launches.</p>
+        <a href="muv-analysis-dashboard.html" class="card-btn">View Dashboard <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+      </div>
+    </div>
+
+    <!-- Contractor Compliance -->
+    <div class="card">
+      <div class="card-accent accent-navy"></div>
+      <div class="card-body">
+        <div class="card-icon icon-navy">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <h3>Contractor Compliance</h3>
+        <p>Real-time contractor risk classification and insurance status tracking for 70+ vendors with filtering, search, and card views.</p>
+        <a href="contractor-compliance-dashboard.html" class="card-btn">View Dashboard <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+      </div>
+    </div>
+
+    <!-- Contract Compliance Report -->
+    <div class="card">
+      <div class="card-accent accent-steel"></div>
+      <div class="card-body">
+        <div class="card-icon icon-steel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <h3>Contract Compliance Report</h3>
+        <p>Monthly contract lifecycle tracker covering 55+ vendor agreements by status, category, and Veriforce enrollment. Replaced a manual Word document.</p>
+        <a href="contract-compliance-report.html" class="card-btn">View Dashboard <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══ TECH STACK ═══ -->
+<section class="tech-section">
+  <div class="tech-label">Built End-to-End With</div>
+  <div class="tech-pills">
+    <span class="tech-pill">Power BI</span>
+    <span class="tech-pill">DAX</span>
+    <span class="tech-pill">Power Query</span>
+    <span class="tech-pill">SQL</span>
+    <span class="tech-pill">SharePoint</span>
+    <span class="tech-pill">Excel</span>
+    <span class="tech-pill">Veriforce</span>
+    <span class="tech-pill">SAP</span>
+  </div>
+</section>
+
+<!-- ═══ FOOTER ═══ -->
+<footer class="footer">
+  <div class="footer-name">Jeff Chery</div>
+  <div class="footer-company">Chery Solutions LLC</div>
+  <div class="footer-links">
+    <a href="https://linkedin.com/in/jeffchery" target="_blank" rel="noopener" class="footer-link">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+      LinkedIn
+    </a>
+    <a href="https://cherysolutions.com" target="_blank" rel="noopener" class="footer-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      cherysolutions.com
+    </a>
+  </div>
+  <div class="footer-meta">Built with HTML, CSS &amp; JavaScript &mdash; No frameworks, no dependencies</div>
+</footer>
+
+<script>
+  // ── Animated Counters ──
+  function animateCounters() {
+    const counters = document.querySelectorAll('.counter');
+    counters.forEach(counter => {
+      const target = +counter.dataset.target;
+      const duration = 2000;
+      const start = performance.now();
+
+      function update(now) {
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / duration, 1);
+        // Ease out cubic
+        const eased = 1 - Math.pow(1 - progress, 3);
+        counter.textContent = Math.round(target * eased);
+        if (progress < 1) requestAnimationFrame(update);
+      }
+      requestAnimationFrame(update);
+    });
+  }
+
+  // Run counters on load
+  animateCounters();
+
+  // ── Scroll Reveal ──
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        // Stagger the animation
+        const card = entry.target;
+        const index = Array.from(card.parentElement.children).indexOf(card);
+        setTimeout(() => {
+          card.classList.add('visible');
+        }, index * 100);
+        observer.unobserve(card);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.card').forEach(card => observer.observe(card));
+</script>
+
+</body>
+</html>

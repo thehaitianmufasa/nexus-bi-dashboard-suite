@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MUV Analysis: Material Usage Variance</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  body { font-family: 'Inter', -apple-system, sans-serif; background: #f0f0f0; color: #1a1a1a; min-height: 100vh; }
+
+  /* ── HEADER ── */
+  .top-header { background: #b01c2e; padding: 0 24px; position: sticky; top: 0; z-index: 200; }
+  .header-row1 { display: flex; align-items: center; justify-content: space-between; padding: 12px 0 8px; gap: 16px; }
+  .header-left h1 { font-size: 18px; font-weight: 800; color: white; letter-spacing: -0.3px; }
+  .header-left .sub { font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 2px; display: flex; align-items: center; gap: 10px; }
+  .year-select { background: #1a1a2e; color: white; border: none; padding: 6px 28px 6px 10px; border-radius: 6px; font-size: 12px; font-family: inherit; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; background-color: #1a1a2e; }
+  .company-badge { background: rgba(255,255,255,0.15); border-radius: 8px; padding: 6px 14px; color: white; font-size: 13px; font-weight: 700; font-style: italic; letter-spacing: -0.3px; }
+
+  /* ── NAV ── */
+  .nav-tabs { display: flex; gap: 2px; padding-bottom: 0; }
+  .tab-btn { padding: 10px 16px; font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.8); background: transparent; border: none; cursor: pointer; border-radius: 6px 6px 0 0; transition: all 0.2s; white-space: nowrap; font-family: inherit; text-align: center; line-height: 1.3; }
+  .tab-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+  .tab-btn.active { background: #1a1a2e; color: white; font-weight: 600; }
+
+  /* ── PAGE ── */
+  .page { display: none; padding: 20px 24px; }
+  .page.active { display: block; }
+
+  /* ── KPI ROW ── */
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; background: white; border-radius: 8px; border: 1px solid #e0e0e0; overflow: hidden; margin-bottom: 20px; }
+  .kpi-card { padding: 20px 22px; border-right: 1px solid #eee; position: relative; }
+  .kpi-card:last-child { border-right: none; }
+  .kpi-accent { height: 3px; position: absolute; top: 0; left: 0; right: 0; }
+  .acc-blue { background: #1a1a2e; }
+  .acc-teal { background: #2db3a0; }
+  .kpi-card .val { font-size: 36px; font-weight: 800; line-height: 1; margin-bottom: 6px; }
+  .kpi-card .val.red { color: #b01c2e; }
+  .kpi-card .val.orange { color: #e07b24; }
+  .kpi-card .val.navy { color: #1a1a2e; }
+  .kpi-card .lbl { font-size: 12px; color: #666; }
+
+  /* ── 2-COL LAYOUT ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .full-col { margin-bottom: 16px; }
+
+  /* ── CHART BOX ── */
+  .chart-box { background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; }
+  .chart-box h3 { font-size: 13px; font-weight: 700; margin-bottom: 4px; color: #111; }
+  .chart-sub { font-size: 11px; color: #888; margin-bottom: 14px; }
+
+  /* ── HORIZONTAL BAR ── */
+  .hbar-chart { display: flex; flex-direction: column; gap: 7px; }
+  .hbar-row { display: flex; align-items: center; gap: 8px; }
+  .hbar-label { font-size: 11px; color: #444; width: 130px; text-align: right; flex-shrink: 0; }
+  .hbar-label.wide { width: 200px; }
+  .hbar-track { flex: 1; height: 26px; background: #eee; border-radius: 3px; overflow: hidden; }
+  .hbar-fill { height: 100%; border-radius: 3px; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; font-size: 11px; font-weight: 700; color: white; }
+  .hbar-fill.navy { background: #1a1a2e; }
+  .hbar-fill.red { background: #b01c2e; }
+  .hbar-fill.orange { background: #e07b24; }
+
+  /* ── GROUPED BAR (Monthly by year) ── */
+  .grouped-bar { display: flex; flex-direction: column; gap: 6px; }
+  .grouped-row { display: flex; align-items: center; gap: 6px; }
+  .grouped-label { font-size: 11px; color: #444; width: 78px; text-align: right; flex-shrink: 0; }
+  .grouped-bars { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+  .g-bar { height: 14px; border-radius: 2px; display: flex; align-items: center; justify-content: flex-end; padding-right: 6px; font-size: 9px; font-weight: 700; color: white; }
+  .g-bar.b2024 { background: #1a1a2e; }
+  .g-bar.b2025 { background: #b01c2e; }
+  .g-bar.bblank { background: #7c5cbf; }
+
+  /* ── TREEMAP (Reason Code) ── */
+  .treemap { display: flex; height: 130px; border-radius: 6px; overflow: hidden; gap: 2px; }
+  .treemap-cell { display: flex; flex-direction: column; justify-content: flex-end; padding: 8px; font-size: 10px; color: white; font-weight: 600; border-radius: 4px; }
+
+  /* ── TABLE ── */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .data-table thead th { background: #1a1a2e; color: white; padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.3px; }
+  .data-table tbody tr { border-bottom: 1px solid #f0f0f0; }
+  .data-table tbody tr:hover { background: #fafafa; }
+  .data-table tbody td { padding: 8px 12px; color: #333; }
+  .data-table tfoot td { padding: 8px 12px; font-weight: 700; background: #f5f5f5; border-top: 2px solid #ddd; }
+
+  /* ── Legend ── */
+  .legend-row { display: flex; gap: 14px; margin-bottom: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: #555; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* ── Axis labels ── */
+  .axis-row { display: flex; justify-content: space-between; margin-top: 6px; padding: 0 130px 0 0; }
+  .axis-lbl { font-size: 10px; color: #999; }
+
+  /* ── Production Outlook table ── */
+  .outlook-wrap { background: white; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+  .outlook-wrap .data-table tbody td:nth-child(2), .outlook-wrap .data-table tbody td:nth-child(3) { text-align: right; }
+  .outlook-wrap .data-table thead th:nth-child(2), .outlook-wrap .data-table thead th:nth-child(3) { text-align: right; }
+
+  body { animation: fadeIn 0.4s ease-in; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .back-to-portfolio { position:fixed; top:16px; right:20px; z-index:9999; background:#1a1a2e; color:white; text-decoration:none; padding:8px 16px; border-radius:20px; font-size:12px; font-weight:600; font-family:inherit; display:flex; align-items:center; gap:6px; opacity:0.75; transition:opacity 0.2s; }
+  .back-to-portfolio:hover { opacity:1; }
+</style>
+</head>
+<body>
+<a href="index.html" class="back-to-portfolio">&#8592; Portfolio</a>
+
+<!-- HEADER -->
+<div class="top-header">
+  <div class="header-row1">
+    <div class="header-left">
+      <h1>MUV Analysis: Material Usage Variance |</h1>
+      <div class="sub">
+        <span>Operations Analytics Team</span>
+        <select class="year-select"><option>All</option><option>2024</option><option>2025</option></select>
+      </div>
+    </div>
+    <div class="nav-tabs">
+      <button class="tab-btn active" onclick="showTab('exec', this)">Executive Summary</button>
+      <button class="tab-btn" onclick="showTab('loss', this)">Material Loss Breakdown</button>
+      <button class="tab-btn" onclick="showTab('sched', this)">Scheduling and Alerts</button>
+      <button class="tab-btn" onclick="showTab('npl', this)">New Product Launches</button>
+      <button class="tab-btn" onclick="showTab('outlook', this)">Production Outlook</button>
+    </div>
+    <div class="company-badge">Nexus Manufacturing Co.</div>
+  </div>
+</div>
+
+<!-- ═══════════ TAB 1: EXECUTIVE SUMMARY ═══════════ -->
+<div class="page active" id="tab-exec">
+  <div class="kpi-row">
+    <div class="kpi-card"><div class="kpi-accent acc-blue"></div><div class="val red">$2M</div><div class="lbl">Net MUV</div></div>
+    <div class="kpi-card"><div class="kpi-accent acc-blue"></div><div class="val red">$6M</div><div class="lbl">Total Losses</div></div>
+    <div class="kpi-card"><div class="kpi-accent acc-blue"></div><div class="val orange">93.1%</div><div class="lbl">Avg Yield</div></div>
+    <div class="kpi-card"><div class="kpi-accent acc-blue"></div><div class="val navy">18K</div><div class="lbl">Total Orders</div></div>
+  </div>
+
+  <div class="two-col">
+    <!-- Monthly Losses by Year -->
+    <div class="chart-box">
+      <h3>Monthly Losses by Year</h3>
+      <div class="legend-row">
+        <div class="legend-item"><div class="legend-dot" style="background:#7c5cbf"></div>(Blank)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#1a1a2e"></div>2024</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#b01c2e"></div>2025</div>
+      </div>
+      <div class="grouped-bar">
+        <div class="grouped-row"><div class="grouped-label">December</div><div class="grouped-bars"><div class="g-bar b2024" style="width:55%"></div><div class="g-bar b2025" style="width:0%"></div></div></div>
+        <div class="grouped-row"><div class="grouped-label">November</div><div class="grouped-bars"><div class="g-bar b2024" style="width:40%"></div><div class="g-bar b2025" style="width:28%"></div></div></div>
+        <div class="grouped-row"><div class="grouped-label">October</div><div class="grouped-bars"><div class="g-bar b2024" style="width:38%"></div><div class="g-bar b2025" style="width:35%"></div></div></div>
+        <div class="grouped-row"><div class="grouped-label">September</div><div class="grouped-bars"><div class="g-bar b2024" style="width:35%"></div><div class="g-bar b2025" style="width:25%"></div></div></div>
+        <div class="grouped-row"><div class="grouped-label">August</div><div class="grouped-bars"><div class="g-bar b2024" style="width:65%"></div><div class="g-bar b2025" style="width:50%"></div></div></div>
+        <div class="grouped-row"><div class="grouped-label">July</div><div class="grouped-bars"><div class="g-bar b2024" style="width:48%"></div><div class="g-bar b2025" style="width:42%"></div></div></div>
+        <div class="grouped-row"><div class="grouped-label">June</div><div class="grouped-bars"><div class="g-bar b2024" style="width:38%"></div><div class="g-bar b2025" style="width:33%"></div></div></div>
+        <div class="grouped-row"><div class="grouped-label">May</div><div class="grouped-bars"><div class="g-bar b2024" style="width:90%"></div><div class="g-bar b2025" style="width:32%"></div></div></div>
+        <div class="grouped-row"><div class="grouped-label">April</div><div class="grouped-bars"><div class="g-bar b2024" style="width:44%"></div><div class="g-bar b2025" style="width:0%"></div></div></div>
+        <div class="grouped-row"><div class="grouped-label">March</div><div class="grouped-bars"><div class="g-bar b2024" style="width:95%"></div><div class="g-bar b2025" style="width:40%"></div></div></div>
+        <div class="grouped-row"><div class="grouped-label">February</div><div class="grouped-bars"><div class="g-bar b2024" style="width:36%"></div><div class="g-bar b2025" style="width:46%"></div></div></div>
+        <div class="grouped-row"><div class="grouped-label">January</div><div class="grouped-bars"><div class="g-bar b2024" style="width:30%"></div><div class="g-bar b2025" style="width:34%"></div></div></div>
+        <div class="grouped-row"><div class="grouped-label">(Blank)</div><div class="grouped-bars"><div class="g-bar bblank" style="width:38%"></div></div></div>
+      </div>
+      <div class="axis-row"><span class="axis-lbl">$0K</span><span class="axis-lbl">$200K</span><span class="axis-lbl">$400K</span><span class="axis-lbl">$600K</span></div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <!-- Top 5 Losses -->
+      <div class="chart-box">
+        <h3>Top 5 Losses by Material</h3>
+        <div class="hbar-chart">
+          <div class="hbar-row"><div class="hbar-label">MAT-7728A</div><div class="hbar-track"><div class="hbar-fill navy" style="width:100%">$227K</div></div></div>
+          <div class="hbar-row"><div class="hbar-label">MAT-7728B</div><div class="hbar-track"><div class="hbar-fill navy" style="width:98%">$223K</div></div></div>
+          <div class="hbar-row"><div class="hbar-label">MAT-6689</div><div class="hbar-track"><div class="hbar-fill navy" style="width:97%">$220K</div></div></div>
+          <div class="hbar-row"><div class="hbar-label">MAT-1386</div><div class="hbar-track"><div class="hbar-fill navy" style="width:66%">$151K</div></div></div>
+          <div class="hbar-row"><div class="hbar-label">MAT-1455</div><div class="hbar-track"><div class="hbar-fill navy" style="width:43%">$99K</div></div></div>
+        </div>
+      </div>
+
+      <!-- Loss by Reason Code -->
+      <div class="chart-box">
+        <h3>Loss by Reason Code</h3>
+        <div class="hbar-chart">
+          <div class="hbar-row"><div class="hbar-label">(Unclassified)</div><div class="hbar-track"><div class="hbar-fill red" style="width:100%">$3,030K</div></div></div>
+          <div class="hbar-row"><div class="hbar-label">Average MUV</div><div class="hbar-track"><div class="hbar-fill red" style="width:34%">$1,024K</div></div></div>
+          <div class="hbar-row"><div class="hbar-label">Reworks/Relabel</div><div class="hbar-track"><div class="hbar-fill red" style="width:19%">$566K</div></div></div>
+          <div class="hbar-row"><div class="hbar-label">Expensive Ingr.</div><div class="hbar-track"><div class="hbar-fill red" style="width:16%">$499K</div></div></div>
+          <div class="hbar-row"><div class="hbar-label">Process Loss</div><div class="hbar-track"><div class="hbar-fill red" style="width:5%">$42K</div></div></div>
+          <div class="hbar-row"><div class="hbar-label">Other (&lt;$100)</div><div class="hbar-track"><div class="hbar-fill red" style="width:2%"></div></div></div>
+          <div class="hbar-row"><div class="hbar-label">Spillage</div><div class="hbar-track"><div class="hbar-fill red" style="width:2%"></div></div></div>
+          <div class="hbar-row"><div class="hbar-label">Mat. Substitution</div><div class="hbar-track"><div class="hbar-fill red" style="width:1%"></div></div></div>
+          <div class="hbar-row"><div class="hbar-label">Mechanical Failure</div><div class="hbar-track"><div class="hbar-fill red" style="width:1%"></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ TAB 2: MATERIAL LOSS BREAKDOWN ═══════════ -->
+<div class="page" id="tab-loss">
+  <div class="kpi-row">
+    <div class="kpi-card"><div class="kpi-accent acc-blue"></div><div class="val red">$58K</div><div class="lbl">Top Material Loss</div></div>
+    <div class="kpi-card"><div class="kpi-accent acc-blue"></div><div class="val red">$405</div><div class="lbl">Avg Loss Per Order</div></div>
+    <div class="kpi-card"><div class="kpi-accent acc-blue"></div><div class="val orange">$78K</div><div class="lbl">Loss Per Production Line</div></div>
+    <div class="kpi-card"><div class="kpi-accent acc-blue"></div><div class="val navy">$1M</div><div class="lbl">Undocumented Losses</div></div>
+  </div>
+
+  <div class="two-col">
+    <!-- Top 10 Losses by Material -->
+    <div class="chart-box">
+      <h3>Top 10 Losses by Material</h3>
+      <div class="hbar-chart">
+        <div class="hbar-row"><div class="hbar-label">G/L Cycle Reclass</div><div class="hbar-track"><div class="hbar-fill red" style="width:100%">$58K</div></div></div>
+        <div class="hbar-row"><div class="hbar-label">MAT-1628</div><div class="hbar-track"><div class="hbar-fill red" style="width:88%">$51K</div></div></div>
+        <div class="hbar-row"><div class="hbar-label">MAT-1386</div><div class="hbar-track"><div class="hbar-fill red" style="width:81%">$47K</div></div></div>
+        <div class="hbar-row"><div class="hbar-label">MAT-1948</div><div class="hbar-track"><div class="hbar-fill red" style="width:81%">$47K</div></div></div>
+        <div class="hbar-row"><div class="hbar-label">MAT-2099</div><div class="hbar-track"><div class="hbar-fill red" style="width:79%">$46K</div></div></div>
+        <div class="hbar-row"><div class="hbar-label">MAT-3069</div><div class="hbar-track"><div class="hbar-fill red" style="width:74%">$43K</div></div></div>
+        <div class="hbar-row"><div class="hbar-label">MAT-3106</div><div class="hbar-track"><div class="hbar-fill red" style="width:67%">$39K</div></div></div>
+        <div class="hbar-row"><div class="hbar-label">MAT-1952</div><div class="hbar-track"><div class="hbar-fill red" style="width:67%">$39K</div></div></div>
+        <div class="hbar-row"><div class="hbar-label">MAT-3121</div><div class="hbar-track"><div class="hbar-fill red" style="width:62%">$36K</div></div></div>
+        <div class="hbar-row"><div class="hbar-label">MAT-2082</div><div class="hbar-track"><div class="hbar-fill red" style="width:59%">$34K</div></div></div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <!-- Loss by Production Line -->
+      <div class="chart-box">
+        <h3>Loss by Production Line</h3>
+        <div class="hbar-chart">
+          <div class="hbar-row"><div class="hbar-label">Line LF-12</div><div class="hbar-track"><div class="hbar-fill navy" style="width:100%">$316K</div></div></div>
+          <div class="hbar-row"><div class="hbar-label">Line LP-06</div><div class="hbar-track"><div class="hbar-fill navy" style="width:86%">$273K</div></div></div>
+          <div class="hbar-row"><div class="hbar-label">Line LF-14</div><div class="hbar-track"><div class="hbar-fill navy" style="width:77%">$245K</div></div></div>
+          <div class="hbar-row"><div class="hbar-label">Line LP-03</div><div class="hbar-track"><div class="hbar-fill navy" style="width:77%">$243K</div></div></div>
+          <div class="hbar-row"><div class="hbar-label">Line LP-04</div><div class="hbar-track"><div class="hbar-fill navy" style="width:75%">$238K</div></div></div>
+        </div>
+      </div>
+
+      <!-- Reason Code Treemap -->
+      <div class="chart-box">
+        <h3>Reason Code Breakdown</h3>
+        <div class="treemap">
+          <div class="treemap-cell" style="background:#1a1a2e;flex:3.3">
+            <div style="font-size:11px;margin-bottom:4px">(Unclassified)</div>
+            <div>$1,262K</div>
+          </div>
+          <div class="treemap-cell" style="background:#b01c2e;flex:1">
+            <div style="font-size:11px;margin-bottom:4px">Avg MUV</div>
+            <div>$383K</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:2px;flex:0.8">
+            <div class="treemap-cell" style="background:#27ae60;flex:1;font-size:10px">Expensive Ingr.<br><small>$215K</small></div>
+            <div class="treemap-cell" style="background:#e07b24;flex:1;font-size:10px">Process Loss<br><small>$194K</small></div>
+          </div>
+          <div class="treemap-cell" style="background:#555;flex:0.2;font-size:9px">O...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail Table -->
+  <div class="chart-box full-col">
+    <h3 style="margin-bottom:12px">Top 10 Materials — Detail</h3>
+    <table class="data-table">
+      <thead>
+        <tr><th>Material Key</th><th>Description</th><th>Total Losses</th><th>Avg Loss Per Order</th><th>Loss Frequency</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>G/L Cycle Reclass</td><td>—</td><td>$57,795</td><td>$57,795</td><td>6</td></tr>
+        <tr><td>MAT-1628</td><td>TE-201.11 P1T 10UN CTN</td><td>$50,789</td><td>$8,465</td><td>6</td></tr>
+        <tr><td>MAT-1386</td><td>LE-404/D-404 P2 1UN DRUM</td><td>$47,425</td><td>$1,078</td><td>47</td></tr>
+        <tr><td>MAT-1948</td><td>FR-201.00 P2A 4UN PAIL ORG</td><td>$47,100</td><td>$2,614</td><td>18</td></tr>
+        <tr><td>MAT-2099</td><td>BCH FP-624.00 P2 DRUM</td><td>$46,200</td><td>$3,850</td><td>12</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════ TAB 3: SCHEDULING AND ALERTS ═══════════ -->
+<div class="page" id="tab-sched">
+  <div class="kpi-row">
+    <div class="kpi-card"><div class="kpi-accent acc-blue"></div><div class="val red">13</div><div class="lbl">Expensive Material Count</div></div>
+    <div class="kpi-card"><div class="kpi-accent acc-blue"></div><div class="val red">$220K</div><div class="lbl">Expensive Ingredient Losses</div></div>
+    <div class="kpi-card"><div class="kpi-accent acc-blue"></div><div class="val orange">56</div><div class="lbl">Repeat Offender Count</div></div>
+    <div class="kpi-card"><div class="kpi-accent acc-blue"></div><div class="val navy">82</div><div class="lbl">Scheduled Material Count</div></div>
+  </div>
+
+  <div class="two-col">
+    <!-- Expensive Ingredients -->
+    <div class="chart-box">
+      <h3>Top Losses from Expensive Ingredients</h3>
+      <div class="hbar-chart">
+        <div class="hbar-row"><div class="hbar-label">MAT-1455</div><div class="hbar-track"><div class="hbar-fill orange" style="width:100%">$99K</div></div></div>
+        <div class="hbar-row"><div class="hbar-label">MAT-1612</div><div class="hbar-track"><div class="hbar-fill orange" style="width:77%">$76K</div></div></div>
+        <div class="hbar-row"><div class="hbar-label">MAT-3069</div><div class="hbar-track"><div class="hbar-fill orange" style="width:23%">$23K</div></div></div>
+        <div class="hbar-row"><div class="hbar-label">MAT-1525</div><div class="hbar-track"><div class="hbar-fill orange" style="width:11%">$11K</div></div></div>
+        <div class="hbar-row"><div class="hbar-label">MAT-3095</div><div class="hbar-track"><div class="hbar-fill orange" style="width:4%">$4K</div></div></div>
+        <div class="hbar-row"><div class="hbar-label">MAT-3232</div><div class="hbar-track"><div class="hbar-fill orange" style="width:1%"></div></div></div>
+        <div class="hbar-row"><div class="hbar-label">MAT-1343</div><div class="hbar-track"><div class="hbar-fill orange" style="width:1%"></div></div></div>
+        <div class="hbar-row"><div class="hbar-label">MAT-3181</div><div class="hbar-track"><div class="hbar-fill orange" style="width:1%"></div></div></div>
+      </div>
+    </div>
+
+    <!-- High Frequency -->
+    <div class="chart-box">
+      <h3>High Frequency Materials — Top Losses</h3>
+      <div class="hbar-chart">
+        <div class="hbar-row"><div class="hbar-label">MAT-1386</div><div class="hbar-track"><div class="hbar-fill red" style="width:100%">$151K</div></div></div>
+        <div class="hbar-row"><div class="hbar-label">MAT-1950</div><div class="hbar-track"><div class="hbar-fill red" style="width:46%">$70K</div></div></div>
+        <div class="hbar-row"><div class="hbar-label">MAT-2099</div><div class="hbar-track"><div class="hbar-fill red" style="width:43%">$65K</div></div></div>
+        <div class="hbar-row"><div class="hbar-label">MAT-1948</div><div class="hbar-track"><div class="hbar-fill red" style="width:41%">$62K</div></div></div>
+        <div class="hbar-row"><div class="hbar-label">MAT-3106</div><div class="hbar-track"><div class="hbar-fill red" style="width:36%">$55K</div></div></div>
+        <div class="hbar-row"><div class="hbar-label">MAT-2082</div><div class="hbar-track"><div class="hbar-fill red" style="width:33%">$50K</div></div></div>
+        <div class="hbar-row"><div class="hbar-label">MAT-3121</div><div class="hbar-track"><div class="hbar-fill red" style="width:30%">$46K</div></div></div>
+        <div class="hbar-row"><div class="hbar-label">MAT-3069</div><div class="hbar-track"><div class="hbar-fill red" style="width:30%">$46K</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scheduled Table -->
+  <div class="chart-box">
+    <h3 style="margin-bottom:12px">Scheduled Materials with Historical Losses</h3>
+    <table class="data-table">
+      <thead>
+        <tr><th>Order Key</th><th>Material Key</th><th>Start Date</th><th>Description</th><th>Avg Loss Per Order</th><th>Is Expensive</th><th>Frequency Flag</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>100872858</td><td>MAT-3121</td><td>Wed, Feb 25, 2026</td><td>MFI BCH LE-367.00 P2B (OB)</td><td>$7,050</td><td>true</td><td>Low</td></tr>
+        <tr><td>100906942</td><td>MAT-1915</td><td>Wed, Feb 25, 2026</td><td>MFI BCH LE-367.00 P2B (OB)</td><td>$7,050</td><td>true</td><td>Low</td></tr>
+        <tr><td>100906943</td><td>MAT-1915</td><td>Mon, Feb 23, 2026</td><td>MFI BCH LE-367.00 P2B (OB)</td><td>$7,050</td><td>true</td><td>Low</td></tr>
+        <tr><td>100928331</td><td>MAT-1715</td><td>Fri, Feb 27, 2026</td><td>MFI BCH LE-367.00 P2B (OB)</td><td>$7,050</td><td>true</td><td>Low</td></tr>
+        <tr><td>100928331</td><td>MAT-1715</td><td>Sat, Feb 28, 2026</td><td>MFI BCH LE-367.00 P2B (OB)</td><td>$7,050</td><td>true</td><td>Low</td></tr>
+        <tr><td>100928602</td><td>MAT-1950</td><td>Sat, Feb 28, 2026</td><td>MFI BCH LE-367.00 P2B (OB)</td><td>$7,050</td><td>true</td><td>Low</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════ TAB 4: NEW PRODUCT LAUNCHES ═══════════ -->
+<div class="page" id="tab-npl">
+  <div class="kpi-row">
+    <div class="kpi-card"><div class="kpi-accent acc-blue"></div><div class="val red">41</div><div class="lbl">New Product Count</div></div>
+    <div class="kpi-card"><div class="kpi-accent acc-blue"></div><div class="val red">14</div><div class="lbl">Brand Count</div></div>
+    <div class="kpi-card"><div class="kpi-accent acc-blue"></div><div class="val orange">40</div><div class="lbl">Liquid Line Count</div></div>
+    <div class="kpi-card"><div class="kpi-accent acc-blue"></div><div class="val navy">15</div><div class="lbl">Dry Line Count</div></div>
+  </div>
+
+  <div class="two-col">
+    <!-- Launches by Month -->
+    <div class="chart-box">
+      <h3>New Product Launches by Month</h3>
+      <div class="legend-row">
+        <div class="legend-item"><div class="legend-dot" style="background:#1a1a2e"></div>Liquid Line Count</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#e07b24"></div>Dry Line Count</div>
+      </div>
+      <div class="hbar-chart">
+        <div class="hbar-row">
+          <div class="hbar-label">April</div>
+          <div class="hbar-track" style="display:flex;gap:2px;background:transparent;">
+            <div style="width:60px;background:#1a1a2e;border-radius:3px;display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:700">3</div>
+            <div style="width:40px;background:#e07b24;border-radius:3px;display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:700">2</div>
+          </div>
+        </div>
+        <div class="hbar-row">
+          <div class="hbar-label">March</div>
+          <div class="hbar-track" style="display:flex;gap:2px;background:transparent;">
+            <div style="width:200px;background:#1a1a2e;border-radius:3px;display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:700">20</div>
+            <div style="width:130px;background:#e07b24;border-radius:3px;display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:700">13</div>
+          </div>
+        </div>
+        <div class="hbar-row">
+          <div class="hbar-label">February</div>
+          <div class="hbar-track" style="display:flex;gap:2px;background:transparent;">
+            <div style="width:110px;background:#1a1a2e;border-radius:3px;display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:700">11</div>
+          </div>
+        </div>
+        <div class="hbar-row">
+          <div class="hbar-label">January</div>
+          <div class="hbar-track" style="display:flex;gap:2px;background:transparent;">
+            <div style="width:60px;background:#1a1a2e;border-radius:3px;display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:700">6</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Brands -->
+    <div class="chart-box">
+      <h3>Top Brands by Launch Count</h3>
+      <div class="hbar-chart">
+        <div class="hbar-row"><div class="hbar-label">AlphaFuel</div><div class="hbar-track"><div class="hbar-fill red" style="width:100%">6</div></div></div>
+        <div class="hbar-row"><div class="hbar-label">HydraCore</div><div class="hbar-track"><div class="hbar-fill red" style="width:83%">5</div></div></div>
+        <div class="hbar-row"><div class="hbar-label">ClearSip</div><div class="hbar-track"><div class="hbar-fill red" style="width:83%">5</div></div></div>
+        <div class="hbar-row"><div class="hbar-label">ZestBurst</div><div class="hbar-track"><div class="hbar-fill red" style="width:67%">4</div></div></div>
+        <div class="hbar-row"><div class="hbar-label">ZestBurst+ Tea</div><div class="hbar-track"><div class="hbar-fill red" style="width:67%">4</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <!-- Upcoming Launches Table -->
+    <div class="chart-box">
+      <h3 style="margin-bottom:12px">2026 Upcoming Launches</h3>
+      <table class="data-table">
+        <thead><tr><th>Product ID</th><th>Product Name</th><th>Brand</th><th>Month</th><th>Format</th></tr></thead>
+        <tbody>
+          <tr><td>P001</td><td>AlphaFuel Zero Sugar Mango Citrus</td><td>AlphaFuel</td><td>January</td><td>Bottle</td></tr>
+          <tr><td>P002</td><td>AlphaFuel Mango Citrus</td><td>AlphaFuel</td><td>January</td><td>Bottle</td></tr>
+          <tr><td>P003</td><td>Syrups Master Flavor Blue Raspberry</td><td>FoodSvc</td><td>January</td><td>Gallon/Cartridge</td></tr>
+          <tr><td>P004</td><td>HydraCore Cool Berry Burst (8-unit)</td><td>HydraCore</td><td>January</td><td>Bottle</td></tr>
+          <tr><td>P005</td><td>HydraCore Cool Berry Burst (4-unit)</td><td>HydraCore</td><td>January</td><td>Bottle</td></tr>
+          <tr><td>P006</td><td>HydraCore Cool Berry Burst (CA config)</td><td>HydraCore</td><td>January</td><td>Bottle</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Loss Performance Table -->
+    <div class="chart-box">
+      <h3 style="margin-bottom:12px">2025 New Products — Loss Performance</h3>
+      <table class="data-table">
+        <thead><tr><th>Material Key</th><th>Description</th><th>Total Losses</th></tr></thead>
+        <tbody>
+          <tr><td>MAT-3206</td><td>LL/TE-4.001 KY P1B 10UN CTN</td><td>$22,775</td></tr>
+          <tr><td>MAT-3042</td><td>CF/CT/K-85.00 P1F 1UN CTN</td><td>$11,848</td></tr>
+          <tr><td>MAT-3200</td><td>LL/TE-4.00 KY P2B 10UN PAIL</td><td>$10,393</td></tr>
+          <tr><td>MAT-3291</td><td>FP-865.00 KY P2 10UN CTN</td><td>$9,433</td></tr>
+          <tr><td>MAT-3200B</td><td>LL/TE-4.00 KY P2E 10UN DRM</td><td>$6,052</td></tr>
+        </tbody>
+        <tfoot><tr><td colspan="2"><strong>Total</strong></td><td><strong>$135,492</strong></td></tr></tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ TAB 5: PRODUCTION OUTLOOK ═══════════ -->
+<div class="page" id="tab-outlook">
+  <div class="outlook-wrap">
+    <table class="data-table">
+      <thead>
+        <tr><th>Description</th><th>Loss Frequency</th><th>Total Planned Qty</th><th>Total Losses</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>CC P1 60UN DRM</td><td>8</td><td>1,357.00</td><td>$206,776</td></tr>
+        <tr><td>CC P2 60UN DRM US</td><td>9</td><td>1,632.00</td><td>$199,900</td></tr>
+        <tr><td>GR/V-272 P2D 1UN</td><td>6</td><td>6,164.00</td><td>$195,671</td></tr>
+        <tr><td>LE-404/D-404 P2 1UN DRUM</td><td>38</td><td>7,849.00</td><td>$103,348</td></tr>
+        <tr><td>NOS ENERGY GEN P1 0.25UN BAG</td><td>14</td><td>17,658.00</td><td>$96,123</td></tr>
+        <tr><td>TE/PE-109 P1S 5UN CTN</td><td>16</td><td>8,689.00</td><td>$66,560</td></tr>
+        <tr><td>MFI BCH LE-367 P2B (OB)</td><td>7</td><td>8,398.90</td><td>$66,056</td></tr>
+        <tr><td>BCH FP-624.00 P2</td><td>21</td><td>548,040.00</td><td>$56,668</td></tr>
+        <tr><td>OR/V-1501 P1F 6UN CTN</td><td>10</td><td>245.00</td><td>$51,754</td></tr>
+        <tr><td>BCH ST/LE-2.00 P2</td><td>11</td><td>67,060.00</td><td>$46,083</td></tr>
+        <tr><td>NOS COMMON PART P2C 2UN JCN CTN</td><td>9</td><td>2,381.00</td><td>$44,063</td></tr>
+        <tr><td>LE-367 P2B 9UN DRUM</td><td>12</td><td>263.00</td><td>$43,146</td></tr>
+        <tr><td>AP/A/N-683 P2A 1UN PAIL</td><td>17</td><td>23,315.00</td><td>$42,863</td></tr>
+        <tr><td>TE-201/TE-201.11 P2 6UN DRM</td><td>16</td><td>2,475.00</td><td>$36,730</td></tr>
+        <tr><td>WA/CI/M-1.00 P2A 4UN PAIL</td><td>1</td><td>0.00</td><td>$32,851</td></tr>
+        <tr><td>CF/VA/K-49 P2A 1UN PAIL</td><td>13</td><td>1,721.00</td><td>$31,031</td></tr>
+        <tr><td>1/LI/TQ/L-6 P2A 0.25UN PAIL</td><td>6</td><td>1,593.00</td><td>$28,893</td></tr>
+        <tr><td>BCH LE-404/LE-411 P2</td><td>9</td><td>902,000.00</td><td>$28,249</td></tr>
+        <tr><td>BCH MA/GI-2.00 P2B</td><td>17</td><td>119,040.00</td><td>$28,245</td></tr>
+        <tr><td>ME-73.00 P2 1UN DRUM</td><td>9</td><td>543.00</td><td>$27,195</td></tr>
+        <tr><td>BCH AP/A/N-683 P2A</td><td>13</td><td>152,604.50</td><td>$24,896</td></tr>
+        <tr><td>SP-148.00 P1A 5UN PK</td><td>35</td><td>84,242.00</td><td>$23,214</td></tr>
+        <tr><td>BCH 1/ST/LE/L-13.50 P2A</td><td>9</td><td>72,425.00</td><td>$21,636</td></tr>
+        <tr><td>WIP TE/LE-181 P2E 1UN BAG</td><td>9</td><td>470.00</td><td>$21,421</td></tr>
+        <tr><td>WA/CU/M-1.00 P2A 1UN PAIL</td><td>9</td><td>209.00</td><td>$21,274</td></tr>
+        <tr><td>LL/Q/V-478 P2 4UN PAIL</td><td>11</td><td>232.00</td><td>$21,178</td></tr>
+        <tr><td>MN/LI-8.00 P2B 0.5UN PAIL</td><td>12</td><td>1,811.00</td><td>$20,688</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  function showTab(name, el) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    el.classList.add('active');
+  }
+</script>
+</body>
+</html>

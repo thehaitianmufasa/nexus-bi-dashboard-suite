@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calibration Compliance Dashboard</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f0f2f5;
+    color: #1a1a2e;
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 80px;
+    background: #1a1a2e;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 0;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+  }
+
+  .sidebar-logo {
+    width: 44px; height: 44px;
+    background: #c8102e;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: 800; font-size: 14px;
+    margin-bottom: 30px;
+    letter-spacing: -0.5px;
+  }
+
+  .nav-item {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 12px 8px; margin: 4px 0;
+    cursor: pointer; border-radius: 10px;
+    transition: all 0.2s;
+    width: 66px;
+    color: #8888aa;
+    font-size: 10px; gap: 4px;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.08); color: white; }
+  .nav-item.active { background: rgba(255,255,255,0.12); color: white; }
+
+  .nav-item svg { width: 20px; height: 20px; }
+
+  /* ── MAIN CONTENT ── */
+  .main {
+    margin-left: 80px;
+    flex: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: white;
+    padding: 20px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid #e8eaed;
+  }
+
+  .header-title h1 {
+    font-size: 22px; font-weight: 700; color: #1a1a2e; letter-spacing: -0.3px;
+  }
+  .header-title p { font-size: 12px; color: #888; margin-top: 2px; }
+
+  .filter-dropdown {
+    background: #1a1a2e;
+    color: white;
+    border: none;
+    padding: 10px 40px 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    font-family: inherit;
+  }
+
+  /* ── PAGE TABS ── */
+  .page-content { display: none; flex-direction: column; flex: 1; }
+  .page-content.active { display: flex; }
+
+  /* ── KPI CARDS ── */
+  .kpi-section {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    gap: 0;
+    background: white;
+    border-bottom: 1px solid #e8eaed;
+  }
+
+  .kpi-card {
+    padding: 22px 24px;
+    border-right: 1px solid #e8eaed;
+    position: relative;
+  }
+  .kpi-card:last-child { border-right: none; }
+
+  .kpi-card .label {
+    font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.5px;
+    margin-bottom: 10px;
+  }
+
+  .kpi-main {
+    font-size: 38px; font-weight: 700; color: #1a1a2e; line-height: 1;
+    margin-bottom: 10px;
+  }
+
+  .compliance-card { background: #1a1a2e; }
+  .compliance-card .label { color: #aab; }
+  .compliance-card .kpi-main { color: white; }
+
+  .progress-bar-track {
+    height: 6px; background: rgba(255,255,255,0.2); border-radius: 3px; margin-bottom: 6px;
+  }
+  .progress-bar-fill {
+    height: 100%; border-radius: 3px;
+    background: linear-gradient(90deg, #4fc3f7, #29b6f6);
+    transition: width 1s ease;
+  }
+  .progress-labels {
+    display: flex; justify-content: space-between;
+    font-size: 10px; color: #aab;
+  }
+
+  .kpi-sub { font-size: 12px; color: #888; margin-top: 4px; }
+
+  .kpi-card.overdue .kpi-main { color: #c8102e; }
+  .kpi-card.due-soon .kpi-main { color: #f5a623; }
+
+  .border-top-accent { height: 4px; position: absolute; top: 0; left: 0; right: 0; border-radius: 0; }
+  .blue-accent { background: #1565c0; }
+  .red-accent { background: #c8102e; }
+  .amber-accent { background: #f5a623; }
+  .blue-light-accent { background: #4fc3f7; }
+
+  /* ── CHARTS SECTION ── */
+  .charts-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    padding: 20px 28px;
+    flex: 1;
+  }
+
+  .chart-panel {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #e8eaed;
+  }
+
+  .chart-title {
+    font-size: 13px; font-weight: 600; color: #1a1a2e; margin-bottom: 16px;
+  }
+
+  /* Bar Chart */
+  .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+
+  .bar-row {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .bar-label {
+    font-size: 11px; color: #444; text-align: right; white-space: nowrap;
+    width: 160px; flex-shrink: 0;
+  }
+  .bar-track {
+    flex: 1; height: 28px; background: #f0f2f5; border-radius: 4px; overflow: hidden; position: relative;
+  }
+  .bar-fill {
+    height: 100%; border-radius: 4px;
+    display: flex; align-items: center; justify-content: flex-end; padding-right: 8px;
+    font-size: 11px; font-weight: 600; color: white;
+    transition: width 1.2s ease;
+  }
+  .bar-fill.primary { background: #1a1a2e; }
+  .bar-fill.secondary { background: #1565c0; }
+  .bar-fill.success { background: #2e7d5e; }
+
+  /* Donut Chart */
+  .donut-container {
+    display: flex; align-items: center; justify-content: center; gap: 30px;
+    padding: 10px 0;
+  }
+  .donut-svg { flex-shrink: 0; }
+  .donut-legend { display: flex; flex-direction: column; gap: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #444; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── TABLE SECTION ── */
+  .table-section {
+    padding: 0 28px 20px;
+  }
+
+  .data-table {
+    width: 100%; border-collapse: collapse;
+    background: white; border-radius: 12px; overflow: hidden;
+    border: 1px solid #e8eaed;
+    font-size: 12px;
+  }
+
+  .data-table thead th {
+    background: #1a1a2e; color: white;
+    padding: 12px 14px; text-align: left;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.3px;
+  }
+  .data-table tbody tr { border-bottom: 1px solid #f0f2f5; }
+  .data-table tbody tr:hover { background: #f8f9fc; }
+  .data-table tbody td { padding: 10px 14px; color: #333; }
+
+  /* ── STATUS BADGES ── */
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 4px;
+    font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  .badge-compliant { background: #2e7d5e; color: white; }
+  .badge-due-soon { background: #f5a623; color: white; }
+  .badge-overdue { background: #c8102e; color: white; }
+  .badge-pending { background: #4fc3f7; color: #1a1a2e; }
+
+  /* ── DETAIL TABLE PAGE ── */
+  .detail-section { padding: 16px 28px; flex: 1; overflow: auto; }
+
+  .scrollable-table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid #e8eaed; }
+
+  .data-table.detail thead th:first-child { width: 60px; }
+
+  /* ── QUICK CERTS PAGE ── */
+  .filter-bar {
+    background: #1a1a2e; padding: 16px 28px;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+  }
+  .filter-group label {
+    display: block; font-size: 11px; color: #aab; margin-bottom: 6px; font-weight: 500;
+  }
+  .filter-select {
+    width: 100%; background: #252545; color: white; border: 1px solid rgba(255,255,255,0.1);
+    padding: 9px 12px; border-radius: 8px; font-size: 12px;
+    appearance: none; font-family: inherit;
+  }
+
+  /* ── LINK ICON ── */
+  .link-icon { color: #4fc3f7; cursor: pointer; font-size: 14px; }
+
+  /* Responsive adjustments */
+  @media (max-width: 1100px) {
+    .kpi-section { grid-template-columns: 1fr 1fr; }
+    .charts-section { grid-template-columns: 1fr; }
+  }
+
+  body { animation: fadeIn 0.4s ease-in; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .back-to-portfolio { position:fixed; top:16px; right:20px; z-index:9999; background:#1a1a2e; color:white; text-decoration:none; padding:8px 16px; border-radius:20px; font-size:12px; font-weight:600; font-family:inherit; display:flex; align-items:center; gap:6px; opacity:0.75; transition:opacity 0.2s; }
+  .back-to-portfolio:hover { opacity:1; }
+</style>
+</head>
+<body>
+<a href="index.html" class="back-to-portfolio">&#8592; Portfolio</a>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">CC</div>
+
+  <div class="nav-item active" onclick="showPage('executive', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    Executive
+  </div>
+
+  <div class="nav-item" onclick="showPage('detail', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    Equipment Detail
+  </div>
+
+  <div class="nav-item" onclick="showPage('certs', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+    Quick Certs
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- ═══════════════════ PAGE 1: EXECUTIVE ═══════════════════ -->
+  <div class="page-content active" id="page-executive">
+
+    <div class="header">
+      <div class="header-title">
+        <h1>CALIBRATION COMPLIANCE</h1>
+        <p>Precision Manufacturing — North Region Plant</p>
+      </div>
+      <select class="filter-dropdown">
+        <option>All</option>
+        <option>Q1 2026</option>
+        <option>Q2 2026</option>
+        <option>Tank Internal</option>
+        <option>Process</option>
+      </select>
+    </div>
+
+    <!-- KPI CARDS -->
+    <div class="kpi-section">
+
+      <div class="kpi-card compliance-card">
+        <div class="label">COMPLIANCE</div>
+        <div class="kpi-main" id="compliance-pct">96.2%</div>
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" id="compliance-bar" style="width: 96.2%"></div>
+        </div>
+        <div class="progress-labels">
+          <span>3.8% Gap</span>
+          <span>Target: 100%</span>
+        </div>
+      </div>
+
+      <div class="kpi-card" style="position:relative">
+        <div class="border-top-accent blue-accent"></div>
+        <div class="label">Active Equipment</div>
+        <div class="kpi-main">514</div>
+        <div class="kpi-sub">across all locations</div>
+      </div>
+
+      <div class="kpi-card overdue" style="position:relative">
+        <div class="border-top-accent red-accent"></div>
+        <div class="label">Overdue Count</div>
+        <div class="kpi-main">—</div>
+        <div class="kpi-sub">of active</div>
+      </div>
+
+      <div class="kpi-card" style="position:relative">
+        <div class="border-top-accent amber-accent"></div>
+        <div class="label">Due Soon Count</div>
+        <div class="kpi-main" style="color:#f5a623">61</div>
+        <div class="kpi-sub">within 30 days</div>
+      </div>
+
+      <div class="kpi-card" style="position:relative">
+        <div class="border-top-accent blue-light-accent"></div>
+        <div class="label">Pending Count</div>
+        <div class="kpi-main">3</div>
+        <div class="kpi-sub">awaiting vendor action</div>
+      </div>
+
+    </div>
+
+    <!-- CHARTS -->
+    <div class="charts-section">
+
+      <!-- Bar Chart -->
+      <div class="chart-panel">
+        <div class="chart-title">Compliance % by Vendor</div>
+        <div class="bar-chart">
+          <div class="bar-row">
+            <div class="bar-label">Apex Calibration Grp</div>
+            <div class="bar-track"><div class="bar-fill primary" style="width:93.4%">93.4%</div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">Internal</div>
+            <div class="bar-track"><div class="bar-fill secondary" style="width:97.1%">97.1%</div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">Delta HVAC Services</div>
+            <div class="bar-track"><div class="bar-fill success" style="width:100%">100.0%</div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">ThermoCheck Inc.</div>
+            <div class="bar-track"><div class="bar-fill success" style="width:100%">100.0%</div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">PrecisionWeigh Co.</div>
+            <div class="bar-track"><div class="bar-fill success" style="width:100%">100.0%</div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">Momentum Scale Sys.</div>
+            <div class="bar-track"><div class="bar-fill success" style="width:100%">100.0%</div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">Elite Lift & Hoist</div>
+            <div class="bar-track"><div class="bar-fill success" style="width:100%">100.0%</div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">Calibration Pros LLC</div>
+            <div class="bar-track"><div class="bar-fill success" style="width:100%">100.0%</div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">AquaTech Solutions</div>
+            <div class="bar-track"><div class="bar-fill success" style="width:100%">100.0%</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Donut Chart -->
+      <div class="chart-panel">
+        <div class="chart-title">Overdue Count by Equipment Type</div>
+        <div class="donut-container">
+          <svg class="donut-svg" width="160" height="160" viewBox="0 0 160 160">
+            <!-- Background circle -->
+            <circle cx="80" cy="80" r="60" fill="none" stroke="#f0f2f5" stroke-width="24"/>
+            <!-- Compliant: 96.2% -->
+            <circle cx="80" cy="80" r="60" fill="none" stroke="#2e7d5e" stroke-width="24"
+              stroke-dasharray="363.7 376.8" stroke-dashoffset="94" stroke-linecap="butt"
+              transform="rotate(-90 80 80)"/>
+            <!-- Due Soon -->
+            <circle cx="80" cy="80" r="60" fill="none" stroke="#f5a623" stroke-width="24"
+              stroke-dasharray="58 376.8" stroke-dashoffset="-269.7" stroke-linecap="butt"
+              transform="rotate(-90 80 80)"/>
+            <!-- Pending -->
+            <circle cx="80" cy="80" r="60" fill="none" stroke="#4fc3f7" stroke-width="24"
+              stroke-dasharray="6 376.8" stroke-dashoffset="-327.7" stroke-linecap="butt"
+              transform="rotate(-90 80 80)"/>
+            <text x="80" y="76" text-anchor="middle" fill="#1a1a2e" font-size="22" font-weight="700" font-family="Inter">96.2</text>
+            <text x="80" y="94" text-anchor="middle" fill="#888" font-size="11" font-family="Inter">% Compliant</text>
+          </svg>
+          <div class="donut-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#2e7d5e"></div>Compliant (494)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#f5a623"></div>Due Soon (61)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#4fc3f7"></div>Pending (3)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#c8102e"></div>Overdue (0)</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SUMMARY TABLE -->
+    <div class="table-section">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Calibration Company</th>
+            <th>Compliance %</th>
+            <th>Overdue Count</th>
+            <th>Due Soon Count</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Apex Calibration Grp</td><td>93.4%</td><td>0</td><td>54</td></tr>
+          <tr><td>Momentum Scale Sys.</td><td>100.0%</td><td>0</td><td>6</td></tr>
+          <tr><td>Internal</td><td>97.1%</td><td>0</td><td>1</td></tr>
+          <tr><td>Delta HVAC Services</td><td>100.0%</td><td>0</td><td>0</td></tr>
+          <tr><td>ThermoCheck Inc.</td><td>100.0%</td><td>0</td><td>0</td></tr>
+          <tr><td>PrecisionWeigh Co.</td><td>100.0%</td><td>0</td><td>0</td></tr>
+          <tr><td>Elite Lift & Hoist</td><td>100.0%</td><td>0</td><td>0</td></tr>
+          <tr><td>Calibration Pros LLC</td><td>100.0%</td><td>0</td><td>0</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div><!-- end executive -->
+
+
+  <!-- ═══════════════════ PAGE 2: EQUIPMENT DETAIL ═══════════════════ -->
+  <div class="page-content" id="page-detail">
+
+    <div class="header">
+      <div class="header-title">
+        <h1>CALIBRATION COMPLIANCE</h1>
+        <p>Precision Manufacturing — North Region Plant</p>
+      </div>
+      <select class="filter-dropdown">
+        <option>All</option>
+        <option>Tank Internal</option>
+        <option>Process</option>
+        <option>Weighing</option>
+      </select>
+    </div>
+
+    <div class="detail-section">
+      <div class="scrollable-table-wrap">
+        <table class="data-table detail">
+          <thead>
+            <tr>
+              <th>Priority</th>
+              <th>Tag Number</th>
+              <th>Description</th>
+              <th>Equipment Type</th>
+              <th>Frequency</th>
+              <th>Cal. Company</th>
+              <th>Location</th>
+              <th>Compliance Status</th>
+              <th>Last Cal Date</th>
+              <th>Next Due Date</th>
+              <th>Last Cal Link</th>
+            </tr>
+          </thead>
+          <tbody id="detail-table-body">
+            <!-- Injected by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- end detail -->
+
+
+  <!-- ═══════════════════ PAGE 3: QUICK CERTS ═══════════════════ -->
+  <div class="page-content" id="page-certs">
+
+    <div class="header">
+      <div class="header-title">
+        <h1>CALIBRATION COMPLIANCE</h1>
+        <p>Precision Manufacturing — North Region Plant</p>
+      </div>
+      <select class="filter-dropdown">
+        <option>All</option>
+      </select>
+    </div>
+
+    <div class="filter-bar">
+      <div class="filter-group">
+        <label>Description</label>
+        <select class="filter-select"><option>All</option><option>Tank Load Cell</option><option>Refractometer</option><option>Weight Class F</option><option>Monorail</option></select>
+      </div>
+      <div class="filter-group">
+        <label>Search Tag</label>
+        <select class="filter-select"><option>All</option><option>T-Series</option><option>W-Series</option><option>M-Series</option></select>
+      </div>
+      <div class="filter-group">
+        <label>Equipment Number</label>
+        <select class="filter-select"><option>All</option><option>E-1001</option><option>E-1048</option><option>E-5284</option></select>
+      </div>
+      <div class="filter-group">
+        <label>Location</label>
+        <select class="filter-select"><option>All</option><option>Plant Floor A</option><option>Plant Floor B</option><option>Lab</option><option>Warehouse</option></select>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="scrollable-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Description</th>
+              <th>Calibration Company</th>
+              <th>Serial Number</th>
+              <th>Last Cal Date</th>
+              <th>Next Due Date</th>
+              <th>Compliance Status</th>
+              <th>Last Cal Link</th>
+              <th>Priority</th>
+            </tr>
+          </thead>
+          <tbody id="certs-table-body">
+            <!-- Injected by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- end certs -->
+
+</div><!-- end main -->
+
+<script>
+  // ── Navigation
+  function showPage(name, el) {
+    document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    el.classList.add('active');
+  }
+
+  // ── Mock data for Detail page
+  const detailData = [
+    { p:2, tag:'T-48', desc:'Tank Load Cells - Batch Tank 48', type:'Tank_Internal', freq:'Semi-Annual', company:'Internal', loc:'Plant Floor A', status:'Due Soon', last:'10/20/2025', next:'04/20/26' },
+    { p:4, tag:'RF-2284', desc:'Refractometer - Pasteurizer 2', type:'Tank_Internal', freq:'Annual', company:'Internal', loc:'Plant Floor A', status:'Compliant', last:'02/18/2026', next:'02/18/27' },
+    { p:4, tag:'RF-5357', desc:'Refractometer - Batch Tank 12K', type:'Tank_Internal', freq:'Annual', company:'Internal', loc:'Plant Floor A', status:'Compliant', last:'02/18/2026', next:'02/18/27' },
+    { p:4, tag:'RF-5570', desc:'Refractometer - Pasteurizer 1', type:'Tank_Internal', freq:'Annual', company:'Internal', loc:'Plant Floor A', status:'Compliant', last:'02/18/2026', next:'02/18/27' },
+    { p:4, tag:'RF-SBR', desc:'Refractometer - Small Batch Room', type:'Tank_Internal', freq:'Annual', company:'Internal', loc:'Lab', status:'Compliant', last:'02/18/2026', next:'02/18/27' },
+    { p:4, tag:'T-10000', desc:'Tank Load Cells - Batch Tank 10K', type:'Tank_Internal', freq:'Annual', company:'Internal', loc:'Plant Floor A', status:'Compliant', last:'03/13/2026', next:'03/13/27' },
+    { p:4, tag:'T-11000', desc:'Tank Load Cells - Batch Tank 11K', type:'Tank_Internal', freq:'Annual', company:'Internal', loc:'Plant Floor A', status:'Compliant', last:'03/13/2026', next:'03/13/27' },
+    { p:4, tag:'T-12000', desc:'Tank Load Cells - Batch Tank 12K', type:'Tank_Internal', freq:'Annual', company:'Internal', loc:'Plant Floor A', status:'Compliant', last:'03/13/2026', next:'03/13/27' },
+    { p:4, tag:'T-13000', desc:'Tank Load Cells - Batch Tank 13K', type:'Tank_Internal', freq:'Annual', company:'Internal', loc:'Plant Floor A', status:'Compliant', last:'03/13/2026', next:'03/13/27' },
+    { p:4, tag:'T-15', desc:'Tank Load Cells - Batch Tank 15', type:'Tank_Internal', freq:'Semi-Annual', company:'Internal', loc:'Plant Floor A', status:'Compliant', last:'03/19/2026', next:'09/19/26' },
+    { p:4, tag:'T-16', desc:'Tank Scale', type:'Tank_Internal', freq:'Semi-Annual', company:'Momentum Scale Sys.', loc:'Plant Floor B', status:'Compliant', last:'03/18/2026', next:'09/18/26' },
+    { p:4, tag:'T-18', desc:'Tank Load Cells - Batch Tank 18', type:'Tank_Internal', freq:'Semi-Annual', company:'Internal', loc:'Plant Floor A', status:'Compliant', last:'02/19/2026', next:'08/19/26' },
+    { p:4, tag:'T-19', desc:'Tank Load Cells - Batch Tank 19', type:'Tank_Internal', freq:'Semi-Annual', company:'Internal', loc:'Plant Floor A', status:'Compliant', last:'12/30/2025', next:'06/30/26' },
+    { p:4, tag:'T-20', desc:'Tank Load Cells - Batch Tank 20', type:'Tank_Internal', freq:'Semi-Annual', company:'Internal', loc:'Plant Floor A', status:'Compliant', last:'12/30/2025', next:'06/30/26' },
+    { p:3, tag:'M-PRD', desc:'Process Refractometer - Main Line', type:'Process', freq:'Quarterly', company:'ThermoCheck Inc.', loc:'Plant Floor B', status:'Pending', last:'02/16/2026', next:'05/16/26' },
+    { p:4, tag:'W-001', desc:'0.001 Lb-1Lb Class F', type:'Weighing', freq:'Annual', company:'Calibration Pros LLC', loc:'Lab', status:'Compliant', last:'02/09/2026', next:'02/09/27' },
+    { p:4, tag:'W-010', desc:'10Kg Class F', type:'Weighing', freq:'Annual', company:'Calibration Pros LLC', loc:'Lab', status:'Compliant', last:'02/09/2026', next:'02/09/27' },
+    { p:4, tag:'W-011', desc:'10Kg Class F', type:'Weighing', freq:'Annual', company:'Calibration Pros LLC', loc:'Lab', status:'Compliant', last:'02/09/2026', next:'02/09/27' },
+  ];
+
+  const statusBadge = {
+    'Compliant': 'badge-compliant',
+    'Due Soon': 'badge-due-soon',
+    'Overdue': 'badge-overdue',
+    'Pending': 'badge-pending'
+  };
+
+  const tbody = document.getElementById('detail-table-body');
+  detailData.forEach(r => {
+    tbody.innerHTML += `<tr>
+      <td>${r.p}</td>
+      <td><strong>${r.tag}</strong></td>
+      <td>${r.desc}</td>
+      <td>${r.type}</td>
+      <td>${r.freq}</td>
+      <td>${r.company}</td>
+      <td>${r.loc}</td>
+      <td><span class="badge ${statusBadge[r.status] || 'badge-compliant'}">${r.status}</span></td>
+      <td>${r.last}</td>
+      <td>${r.next}</td>
+      <td><span class="link-icon">&#128279;</span></td>
+    </tr>`;
+  });
+
+  // ── Mock data for Quick Certs page
+  const certsData = [
+    { desc:'', company:'Elite Lift & Hoist', serial:'1049488-100/1049488-100-01', last:'02/10/2026', next:'02/10/27', status:'Compliant', p:4 },
+    { desc:'', company:'Elite Lift & Hoist', serial:'1049488-100/1049488-300-02', last:'02/10/2026', next:'02/10/27', status:'Compliant', p:4 },
+    { desc:'0.001 Lb-1Lb Class F', company:'Calibration Pros LLC', serial:'188', last:'02/09/2026', next:'02/09/27', status:'Compliant', p:4 },
+    { desc:'1/2-Ton Monorail', company:'Elite Lift & Hoist', serial:'6-9D', last:'02/10/2026', next:'02/10/27', status:'Compliant', p:4 },
+    { desc:'10Kg Class F', company:'Calibration Pros LLC', serial:'008-10Kg', last:'02/09/2026', next:'02/09/27', status:'Compliant', p:4 },
+    { desc:'10Kg Class F', company:'Calibration Pros LLC', serial:'1', last:'02/09/2026', next:'02/09/27', status:'Compliant', p:4 },
+    { desc:'10Kg Class F', company:'Calibration Pros LLC', serial:'10', last:'02/09/2026', next:'02/09/27', status:'Compliant', p:4 },
+    { desc:'10Kg Class F', company:'Calibration Pros LLC', serial:'11', last:'02/09/2026', next:'02/09/27', status:'Compliant', p:4 },
+    { desc:'10Kg Class F', company:'Calibration Pros LLC', serial:'12', last:'02/09/2026', next:'02/09/27', status:'Compliant', p:4 },
+    { desc:'10Kg Class F', company:'Calibration Pros LLC', serial:'121', last:'02/09/2026', next:'02/09/27', status:'Compliant', p:4 },
+    { desc:'10Kg Class F', company:'Calibration Pros LLC', serial:'122', last:'02/09/2026', next:'02/09/27', status:'Compliant', p:4 },
+    { desc:'10Kg Class F', company:'Calibration Pros LLC', serial:'123', last:'02/09/2026', next:'02/09/27', status:'Compliant', p:4 },
+    { desc:'10Kg Class F', company:'Calibration Pros LLC', serial:'124', last:'02/09/2026', next:'02/09/27', status:'Compliant', p:4 },
+    { desc:'10Kg Class F', company:'Calibration Pros LLC', serial:'125', last:'02/09/2026', next:'02/09/27', status:'Compliant', p:4 },
+    { desc:'Process Refractometer', company:'ThermoCheck Inc.', serial:'PRD-2026-001', last:'02/16/2026', next:'05/16/26', status:'Pending', p:3 },
+    { desc:'5-Ton Overhead Crane', company:'Elite Lift & Hoist', serial:'CR-2200-A', last:'01/15/2026', next:'01/15/27', status:'Compliant', p:4 },
+    { desc:'20Kg Class M', company:'Calibration Pros LLC', serial:'20M-007', last:'02/09/2026', next:'02/09/27', status:'Compliant', p:4 },
+    { desc:'Tank Load Cell', company:'Internal', serial:'TLC-048', last:'10/20/2025', next:'04/20/26', status:'Due Soon', p:2 },
+  ];
+
+  const certsTbody = document.getElementById('certs-table-body');
+  certsData.forEach(r => {
+    certsTbody.innerHTML += `<tr>
+      <td>${r.desc}</td>
+      <td>${r.company}</td>
+      <td>${r.serial}</td>
+      <td>${r.last}</td>
+      <td>${r.next}</td>
+      <td><span class="badge ${statusBadge[r.status] || 'badge-compliant'}">${r.status}</span></td>
+      <td><span class="link-icon">&#128279;</span></td>
+      <td>${r.p}</td>
+    </tr>`;
+  });
+</script>
+</body>
+</html>

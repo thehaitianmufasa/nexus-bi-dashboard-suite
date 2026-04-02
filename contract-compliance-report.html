@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contract Compliance Report</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+  body { font-family: 'Inter', -apple-system, sans-serif; background: #f0f2f5; color: #1a1a1a; min-height: 100vh; }
+
+  /* ── HEADER ── */
+  .header {
+    background: #1a1a2e;
+    padding: 18px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .logo-badge {
+    width: 42px; height: 42px; background: #c8102e;
+    border-radius: 10px; display: flex; align-items: center;
+    justify-content: center; font-weight: 800; font-size: 14px;
+    color: white; letter-spacing: -0.5px; flex-shrink: 0;
+  }
+  .header-title h1 { font-size: 20px; font-weight: 800; color: white; letter-spacing: -0.3px; }
+  .header-title p { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+  .report-date { font-size: 28px; font-weight: 300; color: rgba(255,255,255,0.7); letter-spacing: -0.5px; }
+
+  /* ── KPI TILES ── */
+  .kpi-row {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 0; margin: 24px 28px; border-radius: 12px; overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  }
+  .kpi-tile {
+    padding: 32px 28px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+  }
+  .kpi-tile .num { font-size: 56px; font-weight: 800; color: white; line-height: 1; margin-bottom: 10px; }
+  .kpi-tile .lbl { font-size: 13px; color: rgba(255,255,255,0.8); font-weight: 500; }
+  .tile-navy  { background: #1a1a2e; }
+  .tile-rose  { background: #c0736a; }
+  .tile-teal  { background: #5a9e96; }
+  .tile-amber { background: #d4a82a; }
+
+  /* ── FILTER + CONTROLS BAR ── */
+  .controls-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 28px 14px;
+    gap: 16px;
+  }
+  .controls-left { display: flex; gap: 12px; align-items: center; }
+  .filter-group { display: flex; align-items: center; gap: 8px; }
+  .filter-group label { font-size: 11px; font-weight: 700; color: #777; text-transform: uppercase; letter-spacing: 0.4px; }
+  .filter-select {
+    border: 1px solid #ddd; border-radius: 7px; padding: 7px 28px 7px 10px;
+    font-size: 12px; font-family: inherit; cursor: pointer; appearance: none; color: #222;
+    background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 8px center;
+  }
+  .search-wrap {
+    display: flex; align-items: center; gap: 8px;
+    background: white; border: 1px solid #ddd; border-radius: 7px;
+    padding: 7px 12px; min-width: 220px;
+  }
+  .search-wrap input { border: none; outline: none; font-size: 12px; font-family: inherit; flex: 1; }
+
+  /* ── TABLE ── */
+  .table-wrap {
+    margin: 0 28px 28px;
+    border-radius: 10px; overflow: hidden;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .data-table { width: 100%; border-collapse: collapse; font-size: 13px; background: white; }
+  .data-table thead th {
+    background: #1a1a2e; color: white;
+    padding: 13px 16px; text-align: left;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
+    cursor: pointer; user-select: none; white-space: nowrap;
+  }
+  .data-table thead th:hover { background: #252545; }
+  .data-table tbody tr { border-bottom: 1px solid #f0f2f5; transition: background 0.1s; }
+  .data-table tbody tr:hover { background: #f8f9fc; }
+  .data-table tbody tr.non-active-row { background: #fff5f5; }
+  .data-table tbody tr.non-active-row:hover { background: #fee8e8; }
+  .data-table tbody td { padding: 11px 16px; color: #333; vertical-align: middle; }
+  .data-table tfoot td { padding: 11px 16px; font-weight: 800; background: #f5f5f5; border-top: 2px solid #ddd; font-size: 13px; }
+
+  /* ── STATUS INDICATORS ── */
+  .status-cell { display: flex; align-items: center; gap: 7px; }
+  .status-x {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #c0392b; color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; flex-shrink: 0;
+  }
+  .status-dot {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #e07b24;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .status-check {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #2e7d5e; color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; flex-shrink: 0;
+  }
+  .status-text.activated { color: #333; }
+  .status-text.non-active { color: #c0392b; font-weight: 600; }
+  .status-text.authoring { color: #e07b24; font-weight: 600; }
+
+  /* ── AGREEMENT TYPE CHIPS ── */
+  .chip {
+    display: inline-block; padding: 2px 9px; border-radius: 12px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.3px;
+  }
+  .chip-mpa   { background: #e8f0fe; color: #1565c0; }
+  .chip-nda   { background: #e8f5e9; color: #2e7d32; }
+  .chip-other { background: #f3e5f5; color: #6a1b9a; }
+  .chip-sow   { background: #fff3e0; color: #e65100; }
+  .chip-msa   { background: #fce4ec; color: #880e4f; }
+
+  /* ── VERIFORCE STATUS ── */
+  .vf-enrolled { color: #2e7d5e; font-weight: 600; font-size: 12px; }
+  .vf-not-enrolled { color: #888; font-size: 12px; }
+
+  /* ── STATUS CATEGORY ── */
+  .cat-effect { color: #2e7d5e; font-size: 12px; font-weight: 500; }
+  .cat-pending { color: #c0392b; font-size: 12px; font-weight: 500; }
+  .cat-comm { color: #e07b24; font-size: 12px; font-weight: 500; }
+  .cat-authoring { color: #1565c0; font-size: 12px; font-weight: 500; }
+  .cat-approval { color: #7b1fa2; font-size: 12px; font-weight: 500; }
+
+  /* ── PAGINATION ── */
+  .pagination {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; border-top: 1px solid #f0f2f5;
+    background: white;
+  }
+  .page-info { font-size: 12px; color: #888; }
+  .page-btns { display: flex; gap: 4px; }
+  .page-btn {
+    min-width: 32px; height: 32px; border-radius: 6px; border: 1px solid #ddd;
+    background: white; font-size: 12px; cursor: pointer; font-family: inherit;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; color: #555; padding: 0 8px;
+  }
+  .page-btn.active { background: #1a1a2e; color: white; border-color: #1a1a2e; }
+  .page-btn:hover:not(.active) { background: #f5f5f5; }
+
+  /* ── MONTH NAV ── */
+  .month-nav { display: flex; gap: 6px; }
+  .month-btn {
+    padding: 7px 14px; border-radius: 7px; border: 1px solid #ddd;
+    background: white; font-size: 11px; font-weight: 600; cursor: pointer;
+    font-family: inherit; color: #555; transition: all 0.15s;
+  }
+  .month-btn.active { background: #1a1a2e; color: white; border-color: #1a1a2e; }
+
+  body { animation: fadeIn 0.4s ease-in; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .back-to-portfolio { position:fixed; top:16px; right:20px; z-index:9999; background:#1a1a2e; color:white; text-decoration:none; padding:8px 16px; border-radius:20px; font-size:12px; font-weight:600; font-family:inherit; display:flex; align-items:center; gap:6px; opacity:0.75; transition:opacity 0.2s; }
+  .back-to-portfolio:hover { opacity:1; }
+</style>
+</head>
+<body>
+<a href="index.html" class="back-to-portfolio">&#8592; Portfolio</a>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo-badge">CC</div>
+    <div class="header-title">
+      <h1>Contract Compliance Report</h1>
+      <p>Nexus Manufacturing Co. &mdash; North Region Plant</p>
+    </div>
+  </div>
+  <div class="report-date" id="report-date">April 2026</div>
+</div>
+
+<!-- KPI TILES -->
+<div class="kpi-row">
+  <div class="kpi-tile tile-navy">
+    <div class="num" id="kpi-activated">46</div>
+    <div class="lbl">Agreement Activated</div>
+  </div>
+  <div class="kpi-tile tile-rose">
+    <div class="num" id="kpi-comm">9</div>
+    <div class="lbl">In Communication</div>
+  </div>
+  <div class="kpi-tile tile-teal">
+    <div class="num" id="kpi-legal">2</div>
+    <div class="lbl">Pending Legal</div>
+  </div>
+  <div class="kpi-tile tile-amber">
+    <div class="num" id="kpi-enrolled">36</div>
+    <div class="lbl">Veriforce Enrolled</div>
+  </div>
+</div>
+
+<!-- CONTROLS -->
+<div class="controls-bar">
+  <div class="controls-left">
+    <div class="search-wrap">
+      <span style="color:#aaa;font-size:14px">&#128269;</span>
+      <input type="text" placeholder="Search vendor..." oninput="filterData()">
+    </div>
+    <div class="filter-group">
+      <label>Status</label>
+      <select class="filter-select" onchange="filterData()">
+        <option value="">All</option>
+        <option value="Activated">Activated</option>
+        <option value="Non Active">Non Active</option>
+        <option value="Author Contract">Author Contract</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Agreement</label>
+      <select class="filter-select" onchange="filterData()">
+        <option value="">All</option>
+        <option value="MPA">MPA</option>
+        <option value="NDA">NDA</option>
+        <option value="MSA">MSA</option>
+        <option value="SOW">SOW</option>
+        <option value="Other Contract">Other Contract</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Veriforce</label>
+      <select class="filter-select" onchange="filterData()">
+        <option value="">All</option>
+        <option value="onboarded">Enrolled</option>
+        <option value="Not Enrolled">Not Enrolled</option>
+      </select>
+    </div>
+  </div>
+  <div class="month-nav">
+    <button class="month-btn" onclick="setMonth('January 2026', this)">Jan</button>
+    <button class="month-btn" onclick="setMonth('February 2026', this)">Feb</button>
+    <button class="month-btn" onclick="setMonth('March 2026', this)">Mar</button>
+    <button class="month-btn active" onclick="setMonth('April 2026', this)">Apr</button>
+  </div>
+</div>
+
+<!-- TABLE -->
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th onclick="sortBy('vendor')">Vendor &#8597;</th>
+        <th onclick="sortBy('type')">Agreement Type &#8597;</th>
+        <th onclick="sortBy('status')">Status &#8597;</th>
+        <th onclick="sortBy('category')">Status Category &#8597;</th>
+        <th onclick="sortBy('veriforce')">Veriforce Status &#8597;</th>
+      </tr>
+    </thead>
+    <tbody id="table-body"></tbody>
+    <tfoot>
+      <tr>
+        <td>Total</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+      </tr>
+    </tfoot>
+  </table>
+  <div class="pagination">
+    <div class="page-info" id="page-info"></div>
+    <div class="page-btns" id="page-btns"></div>
+  </div>
+</div>
+
+<script>
+const allData = [
+  // Activated + In Effect
+  { vendor: "Apex Mechanical Services",      type: "NDA",            status: "Activated",       category: "In Effect",          vf: "Not Enrolled" },
+  { vendor: "Summit Industrial Group",       type: "MSA",            status: "Activated",       category: "In Effect",          vf: "Not Enrolled" },
+  { vendor: "Vertex Facility Solutions",     type: "MPA",            status: "Activated",       category: "In Effect",          vf: "onboarded"    },
+  { vendor: "ClearFlow Environmental",       type: "MPA",            status: "Activated",       category: "In Effect",          vf: "Not Enrolled" },
+  { vendor: "ClearFlow Environmental",       type: "NDA",            status: "Activated",       category: "In Effect",          vf: "Not Enrolled" },
+  { vendor: "Pinnacle Safety Partners",      type: "MPA",            status: "Activated",       category: "In Effect",          vf: "Not Enrolled" },
+  { vendor: "Pinnacle Safety Partners",      type: "NDA",            status: "Activated",       category: "In Effect",          vf: "Not Enrolled" },
+  { vendor: "Horizon Industrial LLC",        type: "MPA",            status: "Activated",       category: "In Effect",          vf: "onboarded"    },
+  { vendor: "Horizon Industrial LLC",        type: "Other Contract", status: "Activated",       category: "In Effect",          vf: "onboarded"    },
+  { vendor: "Delta Technical Associates",    type: "MPA",            status: "Activated",       category: "In Effect",          vf: "onboarded"    },
+  { vendor: "Silverline HVAC Solutions",     type: "MPA",            status: "Activated",       category: "In Effect",          vf: "onboarded"    },
+  { vendor: "ProTech Elevator Group",        type: "Other Contract", status: "Activated",       category: "In Effect",          vf: "Not Enrolled" },
+  { vendor: "Sterling Pest Control",         type: "NDA",            status: "Activated",       category: "In Effect",          vf: "onboarded"    },
+  { vendor: "Patriot Fire Protection",       type: "MPA",            status: "Activated",       category: "In Effect",          vf: "Not Enrolled" },
+  { vendor: "Keystone Electrical Services",  type: "MSA",            status: "Activated",       category: "In Effect",          vf: "onboarded"    },
+  { vendor: "Luminos Energy Systems",        type: "MPA",            status: "Activated",       category: "In Effect",          vf: "Not Enrolled" },
+  { vendor: "Orion Refrigeration Inc",       type: "MPA",            status: "Activated",       category: "In Effect",          vf: "onboarded"    },
+  { vendor: "Atlas Roofing Contractors",     type: "Other Contract", status: "Activated",       category: "In Effect",          vf: "Not Enrolled" },
+  { vendor: "Pacific Filtration Systems",    type: "MPA",            status: "Activated",       category: "In Effect",          vf: "onboarded"    },
+  { vendor: "Eagle Industrial Supplies",     type: "NDA",            status: "Activated",       category: "In Effect",          vf: "Not Enrolled" },
+  { vendor: "Centurion Safety Group",        type: "MPA",            status: "Activated",       category: "In Effect",          vf: "onboarded"    },
+  { vendor: "Northgate Maintenance Svc.",    type: "MPA",            status: "Activated",       category: "In Effect",          vf: "onboarded"    },
+  { vendor: "Redline Mechanical LLC",        type: "SOW",            status: "Activated",       category: "In Effect",          vf: "onboarded"    },
+  { vendor: "Ironclad Welding & Fab.",       type: "MPA",            status: "Activated",       category: "In Effect",          vf: "onboarded"    },
+  { vendor: "Cascade Cleaning Partners",     type: "MPA",            status: "Activated",       category: "In Effect",          vf: "Not Enrolled" },
+  { vendor: "Frontier Crane & Hoist",        type: "NDA",            status: "Activated",       category: "In Effect",          vf: "Not Enrolled" },
+  { vendor: "TrueNorth Calibration",         type: "MPA",            status: "Activated",       category: "In Effect",          vf: "onboarded"    },
+  { vendor: "Paragon Industrial Corp",       type: "Other Contract", status: "Activated",       category: "In Effect",          vf: "onboarded"    },
+  { vendor: "Meridian HVAC Services",        type: "MPA",            status: "Activated",       category: "In Effect",          vf: "onboarded"    },
+  { vendor: "Titanium Boiler & Equipment",   type: "NDA",            status: "Activated",       category: "In Effect",          vf: "Not Enrolled" },
+  { vendor: "BlueStar National Corp",        type: "MPA",            status: "Activated",       category: "In Effect",          vf: "onboarded"    },
+  { vendor: "Allied Security Solutions LP",  type: "MSA",            status: "Activated",       category: "In Effect",          vf: "onboarded"    },
+  { vendor: "Nova Communications LLC",       type: "MPA",            status: "Activated",       category: "In Effect",          vf: "onboarded"    },
+  { vendor: "Cascade Water Systems",         type: "Other Contract", status: "Activated",       category: "In Effect",          vf: "Not Enrolled" },
+  { vendor: "Greenfield Environmental Svc.", type: "NDA",            status: "Activated",       category: "In Effect",          vf: "Not Enrolled" },
+  { vendor: "Apex Pipe & Valve Co.",         type: "MPA",            status: "Activated",       category: "In Effect",          vf: "onboarded"    },
+  { vendor: "Broadline Calibration Svc.",    type: "MPA",            status: "Activated",       category: "In Effect",          vf: "onboarded"    },
+  { vendor: "Imperial Facilities Group",     type: "SOW",            status: "Activated",       category: "In Effect",          vf: "Not Enrolled" },
+  { vendor: "Steelmark Fabrication LLC",     type: "MPA",            status: "Activated",       category: "In Effect",          vf: "onboarded"    },
+  { vendor: "Keystone Automation Inc.",      type: "NDA",            status: "Activated",       category: "In Effect",          vf: "onboarded"    },
+  { vendor: "FlexLine Conveyor Svc.",        type: "MPA",            status: "Activated",       category: "In Effect",          vf: "Not Enrolled" },
+  { vendor: "Goldstone Janitorial Corp.",    type: "Other Contract", status: "Activated",       category: "In Effect",          vf: "Not Enrolled" },
+  { vendor: "Polaris Engineering Group",     type: "MPA",            status: "Activated",       category: "In Effect",          vf: "onboarded"    },
+  { vendor: "SkyBridge Crane & Rigging",     type: "MPA",            status: "Activated",       category: "In Effect",          vf: "onboarded"    },
+  { vendor: "AquaPure Water Systems",        type: "NDA",            status: "Activated",       category: "In Effect",          vf: "Not Enrolled" },
+  { vendor: "Precision Hydraulics Corp",     type: "MPA",            status: "Activated",       category: "In Effect",          vf: "Not Enrolled" },
+  // Non Active
+  { vendor: "Summit Industrial Group",       type: "MPA",            status: "Non Active",      category: "Pending Legal",      vf: "Not Enrolled" },
+  { vendor: "Horizon Industrial LLC",        type: "MPA",            status: "Non Active",      category: "Sent communication", vf: "onboarded"    },
+  { vendor: "Centurion Safety Group",        type: "MPA",            status: "Non Active",      category: "Awaiting Approval",  vf: "Not Enrolled" },
+  { vendor: "Titanium Boiler & Equipment",   type: "MPA",            status: "Non Active",      category: "Sent communication", vf: "onboarded"    },
+  { vendor: "Silverline HVAC Solutions",     type: "MPA",            status: "Non Active",      category: "Pending Legal",      vf: "Not Enrolled" },
+  { vendor: "Patriot Fire Protection",       type: "MPA",            status: "Non Active",      category: "Sent communication", vf: "onboarded"    },
+  { vendor: "Nova Communications LLC",       type: "MPA",            status: "Non Active",      category: "Awaiting Approval",  vf: "Not Enrolled" },
+  { vendor: "Greenfield Environmental Svc.", type: "MPA",            status: "Non Active",      category: "Sent communication", vf: "onboarded"    },
+  { vendor: "Ironclad Welding & Fab.",       type: "MPA",            status: "Non Active",      category: "Pending Legal",      vf: "Not Enrolled" },
+  // Author Contract
+  { vendor: "Delta Technical Associates",    type: "MPA",            status: "Author Contract", category: "In Authoring",       vf: "onboarded"    },
+  { vendor: "Redline Mechanical LLC",        type: "MPA",            status: "Author Contract", category: "In Authoring",       vf: "onboarded"    },
+];
+
+let filtered = [...allData];
+let currentPage = 1;
+const pageSize = 20;
+
+function chipClass(t) {
+  if (t === 'MPA') return 'chip chip-mpa';
+  if (t === 'NDA') return 'chip chip-nda';
+  if (t === 'MSA') return 'chip chip-msa';
+  if (t === 'SOW') return 'chip chip-sow';
+  return 'chip chip-other';
+}
+
+function statusCell(s) {
+  if (s === 'Activated') return `<div class="status-cell"><div class="status-check">&#10003;</div><span class="status-text activated">Activated</span></div>`;
+  if (s === 'Non Active') return `<div class="status-cell"><div class="status-x">&#10005;</div><span class="status-text non-active">Non Active</span></div>`;
+  if (s === 'Author Contract') return `<div class="status-cell"><div class="status-dot"></div><span class="status-text authoring">Author Contract</span></div>`;
+  return s;
+}
+
+function catClass(c) {
+  if (c === 'In Effect') return 'cat-effect';
+  if (c === 'Pending Legal') return 'cat-pending';
+  if (c === 'Sent communication') return 'cat-comm';
+  if (c === 'In Authoring') return 'cat-authoring';
+  if (c === 'Awaiting Approval') return 'cat-approval';
+  return '';
+}
+
+function vfCell(v) {
+  if (v === 'onboarded') return `<span class="vf-enrolled">&#10003; Enrolled</span>`;
+  return `<span class="vf-not-enrolled">Not Enrolled</span>`;
+}
+
+function renderTable() {
+  const tbody = document.getElementById('table-body');
+  const start = (currentPage - 1) * pageSize;
+  const end = Math.min(start + pageSize, filtered.length);
+  const slice = filtered.slice(start, end);
+  tbody.innerHTML = slice.map(r => `
+    <tr class="${r.status === 'Non Active' ? 'non-active-row' : ''}">
+      <td>${r.vendor}</td>
+      <td><span class="${chipClass(r.type)}">${r.type}</span></td>
+      <td>${statusCell(r.status)}</td>
+      <td><span class="${catClass(r.category)}">${r.category}</span></td>
+      <td>${vfCell(r.vf)}</td>
+    </tr>
+  `).join('');
+  document.getElementById('page-info').textContent = `Showing ${start + 1}–${end} of ${filtered.length} records`;
+  renderPagination();
+  updateKPIs();
+}
+
+function renderPagination() {
+  const totalPages = Math.ceil(filtered.length / pageSize);
+  const container = document.getElementById('page-btns');
+  container.innerHTML = '';
+  for (let i = 1; i <= totalPages; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'page-btn' + (i === currentPage ? ' active' : '');
+    btn.textContent = i;
+    btn.onclick = () => { currentPage = i; renderTable(); };
+    container.appendChild(btn);
+  }
+}
+
+function updateKPIs() {
+  document.getElementById('kpi-activated').textContent = filtered.filter(r => r.status === 'Activated').length;
+  document.getElementById('kpi-comm').textContent = filtered.filter(r => r.category === 'Sent communication').length;
+  document.getElementById('kpi-legal').textContent = filtered.filter(r => r.category === 'Pending Legal').length;
+  document.getElementById('kpi-enrolled').textContent = filtered.filter(r => r.vf === 'onboarded').length;
+}
+
+function filterData() {
+  const inputs = document.querySelectorAll('.search-wrap input, .filter-select');
+  const search = inputs[0].value.toLowerCase();
+  const statusF = inputs[1].value;
+  const typeF = inputs[2].value;
+  const vfF = inputs[3].value;
+  filtered = allData.filter(r =>
+    (!search || r.vendor.toLowerCase().includes(search)) &&
+    (!statusF || r.status === statusF) &&
+    (!typeF || r.type === typeF) &&
+    (!vfF || r.vf === vfF)
+  );
+  currentPage = 1;
+  renderTable();
+}
+
+function sortBy(key) {
+  const map = { vendor:'vendor', type:'type', status:'status', category:'category', veriforce:'vf' };
+  filtered.sort((a, b) => String(a[map[key]]).localeCompare(String(b[map[key]])));
+  renderTable();
+}
+
+function setMonth(label, btn) {
+  document.getElementById('report-date').textContent = label;
+  document.querySelectorAll('.month-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// Init
+renderTable();
+</script>
+</body>
+</html>

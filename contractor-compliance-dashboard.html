@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contractor Compliance Dashboard</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+  body { font-family: 'Inter', -apple-system, sans-serif; background: #f0f2f5; color: #1a1a1a; min-height: 100vh; }
+
+  /* ── HEADER ── */
+  .header {
+    background: #1a1a2e;
+    padding: 18px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header-left h1 { font-size: 20px; font-weight: 800; color: white; letter-spacing: -0.3px; }
+  .header-left p { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 3px; }
+  .header-right { text-align: right; }
+  .header-right .badge {
+    background: rgba(255,255,255,0.12); border-radius: 8px;
+    padding: 8px 16px; display: inline-block;
+  }
+  .header-right .badge .company { font-size: 15px; font-weight: 800; color: white; font-style: italic; letter-spacing: -0.3px; }
+  .header-right .badge .facility { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 2px; }
+
+  /* ── FILTER BAR ── */
+  .filter-bar {
+    background: white; padding: 14px 28px;
+    display: flex; gap: 28px; align-items: center;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  .filter-group { display: flex; align-items: center; gap: 10px; }
+  .filter-group label { font-size: 12px; font-weight: 600; color: #555; }
+  .filter-select {
+    border: 1px solid #ddd; border-radius: 6px;
+    padding: 7px 30px 7px 12px; font-size: 12px;
+    font-family: inherit; cursor: pointer; appearance: none; color: #222;
+    background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center;
+    min-width: 140px;
+  }
+
+  /* ── KPI STRIP ── */
+  .kpi-strip {
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    background: white; border-bottom: 1px solid #e0e0e0;
+  }
+  .kpi-card {
+    padding: 20px 24px;
+    border-right: 1px solid #eee;
+    border-left: 4px solid transparent;
+    position: relative;
+  }
+  .kpi-card:last-child { border-right: none; }
+  .kpi-card.bl-gray  { border-left-color: #555; }
+  .kpi-card.bl-green { border-left-color: #2e7d5e; }
+  .kpi-card.bl-teal  { border-left-color: #2db3a0; }
+  .kpi-card.bl-red   { border-left-color: #c0392b; }
+  .kpi-card.bl-amber { border-left-color: #e07b24; }
+  .kpi-label { font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .kpi-value { font-size: 38px; font-weight: 800; line-height: 1; }
+  .kpi-value.gray  { color: #1a1a2e; }
+  .kpi-value.green { color: #2e7d5e; }
+  .kpi-value.teal  { color: #2db3a0; }
+  .kpi-value.red   { color: #c0392b; }
+  .kpi-value.amber { color: #e07b24; }
+
+  /* ── MAIN TABLE AREA ── */
+  .table-area { padding: 20px 28px; }
+
+  /* ── SEARCH / VIEW TOGGLE ── */
+  .table-controls {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .search-box {
+    display: flex; align-items: center; gap: 8px;
+    background: white; border: 1px solid #ddd; border-radius: 8px;
+    padding: 8px 14px; width: 280px;
+  }
+  .search-box input {
+    border: none; outline: none; font-size: 12px; font-family: inherit;
+    flex: 1; color: #333;
+  }
+  .search-icon { color: #aaa; font-size: 14px; }
+  .view-toggle { display: flex; gap: 6px; }
+  .view-btn {
+    padding: 7px 14px; border-radius: 6px; border: 1px solid #ddd;
+    background: white; font-size: 11px; font-weight: 600; cursor: pointer;
+    font-family: inherit; color: #555; transition: all 0.15s;
+  }
+  .view-btn.active { background: #1a1a2e; color: white; border-color: #1a1a2e; }
+
+  /* ── DATA TABLE ── */
+  .data-table {
+    width: 100%; border-collapse: collapse;
+    background: white; border-radius: 10px; overflow: hidden;
+    border: 1px solid #e0e0e0; font-size: 13px;
+  }
+  .data-table thead th {
+    background: #1a1a2e; color: white;
+    padding: 12px 16px; text-align: left;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
+    cursor: pointer; user-select: none;
+  }
+  .data-table thead th:hover { background: #252545; }
+  .data-table thead th .sort-icon { margin-left: 4px; opacity: 0.6; }
+  .data-table tbody tr { border-bottom: 1px solid #f0f2f5; transition: background 0.1s; }
+  .data-table tbody tr:last-child { border-bottom: none; }
+  .data-table tbody tr:hover { background: #f8f9fc; }
+  .data-table tbody td { padding: 11px 16px; color: #333; }
+
+  /* ── STATUS BADGES ── */
+  .badge-approved { color: #2e7d5e; font-weight: 600; }
+  .badge-restriction { color: #555; font-weight: 500; }
+  .badge-not-approved { color: #c0392b; font-weight: 600; }
+  .badge-pending { color: #e07b24; font-weight: 600; }
+
+  /* ── RISK CHIPS ── */
+  .risk { font-weight: 600; }
+  .risk.low { color: #2e7d5e; }
+  .risk.high { color: #c0392b; }
+  .risk.medium { color: #e07b24; }
+
+  /* ── INSURANCE DOT ── */
+  .ins-expired { display: flex; align-items: center; gap: 6px; color: #c0392b; font-size: 12px; font-weight: 500; }
+  .ins-dot { width: 10px; height: 10px; border-radius: 50%; background: #c0392b; flex-shrink: 0; }
+
+  /* ── SUMMARY CARDS VIEW ── */
+  .cards-view { display: none; }
+  .cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .contractor-card {
+    background: white; border-radius: 10px; border: 1px solid #e0e0e0;
+    padding: 16px; transition: box-shadow 0.2s;
+  }
+  .contractor-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+  .card-company { font-size: 13px; font-weight: 700; color: #1a1a2e; margin-bottom: 10px; }
+  .card-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .card-lbl { font-size: 11px; color: #888; }
+  .card-val { font-size: 12px; font-weight: 600; }
+
+  /* ── PAGINATION ── */
+  .pagination {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 14px;
+  }
+  .page-info { font-size: 12px; color: #888; }
+  .page-btns { display: flex; gap: 4px; }
+  .page-btn {
+    width: 32px; height: 32px; border-radius: 6px; border: 1px solid #ddd;
+    background: white; font-size: 12px; cursor: pointer; font-family: inherit;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; color: #555;
+  }
+  .page-btn.active { background: #1a1a2e; color: white; border-color: #1a1a2e; }
+  .page-btn:hover:not(.active) { background: #f5f5f5; }
+
+  /* ── STAT SUMMARY ROW ── */
+  .stat-row {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+    margin-bottom: 20px;
+  }
+  .stat-box {
+    background: white; border-radius: 10px; border: 1px solid #e0e0e0;
+    padding: 16px 20px;
+  }
+  .stat-box h4 { font-size: 12px; color: #888; font-weight: 600; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.4px; }
+  .stat-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .stat-bar-label { font-size: 11px; color: #444; width: 130px; flex-shrink: 0; }
+  .stat-bar-track { flex: 1; height: 18px; background: #f0f2f5; border-radius: 3px; overflow: hidden; }
+  .stat-bar-fill { height: 100%; border-radius: 3px; display: flex; align-items: center; justify-content: flex-end; padding-right: 6px; font-size: 10px; font-weight: 700; color: white; }
+
+  body { animation: fadeIn 0.4s ease-in; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .back-to-portfolio { position:fixed; top:16px; right:20px; z-index:9999; background:#1a1a2e; color:white; text-decoration:none; padding:8px 16px; border-radius:20px; font-size:12px; font-weight:600; font-family:inherit; display:flex; align-items:center; gap:6px; opacity:0.75; transition:opacity 0.2s; }
+  .back-to-portfolio:hover { opacity:1; }
+</style>
+</head>
+<body>
+<a href="index.html" class="back-to-portfolio">&#8592; Portfolio</a>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <h1>Contractor Compliance</h1>
+    <p>CPS — North Region Manufacturing Plant &middot; ComplyWorks Data</p>
+  </div>
+  <div class="header-right">
+    <div class="badge">
+      <div class="company">Nexus Manufacturing Co.</div>
+      <div class="facility">North Region Plant</div>
+    </div>
+  </div>
+</div>
+
+<!-- FILTERS -->
+<div class="filter-bar">
+  <div class="filter-group">
+    <label>Status</label>
+    <select class="filter-select" onchange="applyFilter()">
+      <option value="">All</option>
+      <option value="Approved">Approved</option>
+      <option value="Approved with Restrictions">Approved with Restrictions</option>
+      <option value="Not Approved">Not Approved</option>
+      <option value="Pending">Pending</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>Risk</label>
+    <select class="filter-select" onchange="applyFilter()">
+      <option value="">All</option>
+      <option value="Low Risk">Low Risk</option>
+      <option value="Medium Risk">Medium Risk</option>
+      <option value="High Risk">High Risk</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>Insurance</label>
+    <select class="filter-select" onchange="applyFilter()">
+      <option value="">All</option>
+      <option value="Expired">Expired</option>
+      <option value="Valid">Valid</option>
+    </select>
+  </div>
+</div>
+
+<!-- KPI STRIP -->
+<div class="kpi-strip">
+  <div class="kpi-card bl-gray">
+    <div class="kpi-label">Total Contractors</div>
+    <div class="kpi-value gray">71</div>
+  </div>
+  <div class="kpi-card bl-green">
+    <div class="kpi-label">Approved</div>
+    <div class="kpi-value green">7</div>
+  </div>
+  <div class="kpi-card bl-teal">
+    <div class="kpi-label">Overall Compliance</div>
+    <div class="kpi-value teal">9.86%</div>
+  </div>
+  <div class="kpi-card bl-red">
+    <div class="kpi-label">Not Approved</div>
+    <div class="kpi-value red">40</div>
+  </div>
+  <div class="kpi-card bl-amber">
+    <div class="kpi-label">Expired Insurance</div>
+    <div class="kpi-value amber">41</div>
+  </div>
+</div>
+
+<!-- TABLE AREA -->
+<div class="table-area">
+
+  <!-- Stat Summary -->
+  <div class="stat-row">
+    <div class="stat-box">
+      <h4>Compliance by Status</h4>
+      <div class="stat-bar-row"><div class="stat-bar-label">Approved</div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:10%;background:#2e7d5e">7</div></div></div>
+      <div class="stat-bar-row"><div class="stat-bar-label">Approved w/ Restrictions</div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:34%;background:#e07b24">24</div></div></div>
+      <div class="stat-bar-row"><div class="stat-bar-label">Not Approved</div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:56%;background:#c0392b">40</div></div></div>
+    </div>
+    <div class="stat-box">
+      <h4>Risk Distribution</h4>
+      <div class="stat-bar-row"><div class="stat-bar-label">Low Risk</div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:55%;background:#2e7d5e">39</div></div></div>
+      <div class="stat-bar-row"><div class="stat-bar-label">Medium Risk</div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:20%;background:#e07b24">14</div></div></div>
+      <div class="stat-bar-row"><div class="stat-bar-label">High Risk</div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:25%;background:#c0392b">18</div></div></div>
+    </div>
+    <div class="stat-box">
+      <h4>Insurance Status</h4>
+      <div class="stat-bar-row"><div class="stat-bar-label">Valid</div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:42%;background:#2e7d5e">30</div></div></div>
+      <div class="stat-bar-row"><div class="stat-bar-label">Expired</div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:58%;background:#c0392b">41</div></div></div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="table-controls">
+    <div class="search-box">
+      <span class="search-icon">&#128269;</span>
+      <input type="text" placeholder="Search contractor..." oninput="searchTable(this.value)">
+    </div>
+    <div class="view-toggle">
+      <button class="view-btn active" onclick="switchView('table', this)">Table View</button>
+      <button class="view-btn" onclick="switchView('cards', this)">Card View</button>
+    </div>
+  </div>
+
+  <!-- TABLE VIEW -->
+  <div id="table-view">
+    <table class="data-table" id="main-table">
+      <thead>
+        <tr>
+          <th onclick="sortTable(0)">Company <span class="sort-icon">&#8597;</span></th>
+          <th onclick="sortTable(1)">Compliance <span class="sort-icon">&#8597;</span></th>
+          <th onclick="sortTable(2)">Class <span class="sort-icon">&#8597;</span></th>
+          <th onclick="sortTable(3)">Has Expired Insurance <span class="sort-icon">&#8597;</span></th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+      </tbody>
+    </table>
+    <div class="pagination">
+      <div class="page-info" id="page-info">Showing 1–20 of 71</div>
+      <div class="page-btns" id="page-btns"></div>
+    </div>
+  </div>
+
+  <!-- CARD VIEW -->
+  <div id="cards-view" style="display:none;">
+    <div class="cards-grid" id="cards-grid"></div>
+  </div>
+
+</div>
+
+<script>
+const contractors = [
+  // Approved (7)
+  { company: "Apex Mechanical Services",        status: "Approved",                  risk: "Low Risk",    ins: "" },
+  { company: "Summit Industrial Group",          status: "Approved",                  risk: "High Risk",   ins: "" },
+  { company: "Vertex Facility Solutions",        status: "Approved",                  risk: "Low Risk",    ins: "" },
+  { company: "ClearFlow Environmental",          status: "Approved",                  risk: "Low Risk",    ins: "" },
+  { company: "Pinnacle Safety Partners",         status: "Approved",                  risk: "Low Risk",    ins: "" },
+  { company: "Horizon Industrial LLC",           status: "Approved",                  risk: "High Risk",   ins: "" },
+  { company: "Delta Technical Associates",       status: "Approved",                  risk: "High Risk",   ins: "" },
+  // Approved with Restrictions (24)
+  { company: "Titan Boiler & Equipment",         status: "Approved with Restrictions", risk: "High Risk",   ins: "Expired" },
+  { company: "Greenfield Environmental Svc.",    status: "Approved with Restrictions", risk: "High Risk",   ins: "Expired" },
+  { company: "Nova Communications LLC",          status: "Approved with Restrictions", risk: "High Risk",   ins: "Expired" },
+  { company: "BlueStar National Corp",           status: "Approved with Restrictions", risk: "Low Risk",    ins: "Expired" },
+  { company: "Allied Security Solutions LP",     status: "Approved with Restrictions", risk: "Medium Risk", ins: "Expired" },
+  { company: "Cascade Water & Curran Inc",       status: "Approved with Restrictions", risk: "Low Risk",    ins: "Expired" },
+  { company: "Meridian HVAC Services",           status: "Approved with Restrictions", risk: "Medium Risk", ins: "Expired" },
+  { company: "ProTech Elevator Group",           status: "Approved with Restrictions", risk: "High Risk",   ins: "Expired" },
+  { company: "Sterling Pest Control",            status: "Approved with Restrictions", risk: "Low Risk",    ins: "Expired" },
+  { company: "Patriot Fire Protection",          status: "Approved with Restrictions", risk: "High Risk",   ins: "Expired" },
+  { company: "Keystone Electrical Services",     status: "Approved with Restrictions", risk: "Medium Risk", ins: "Expired" },
+  { company: "Luminos Energy Systems",           status: "Approved with Restrictions", risk: "Low Risk",    ins: "Expired" },
+  { company: "Orion Refrigeration Inc",          status: "Approved with Restrictions", risk: "High Risk",   ins: "Expired" },
+  { company: "Atlas Roofing Contractors",        status: "Approved with Restrictions", risk: "Low Risk",    ins: "Expired" },
+  { company: "Pacific Filtration Systems",       status: "Approved with Restrictions", risk: "Medium Risk", ins: "Expired" },
+  { company: "Eagle Industrial Supplies",        status: "Approved with Restrictions", risk: "Low Risk",    ins: "Expired" },
+  { company: "Centurion Safety Group",           status: "Approved with Restrictions", risk: "High Risk",   ins: "Expired" },
+  { company: "Northgate Maintenance Svc.",       status: "Approved with Restrictions", risk: "Low Risk",    ins: "Expired" },
+  { company: "Redline Mechanical LLC",           status: "Approved with Restrictions", risk: "Medium Risk", ins: "Expired" },
+  { company: "Ironclad Welding & Fab.",          status: "Approved with Restrictions", risk: "High Risk",   ins: "Expired" },
+  { company: "Cascade Cleaning Partners",        status: "Approved with Restrictions", risk: "Low Risk",    ins: "Expired" },
+  { company: "Frontier Crane & Hoist",           status: "Approved with Restrictions", risk: "High Risk",   ins: "Expired" },
+  { company: "TrueNorth Calibration",            status: "Approved with Restrictions", risk: "Low Risk",    ins: "Expired" },
+  { company: "Paragon Industrial Corp",          status: "Approved with Restrictions", risk: "Medium Risk", ins: "Expired" },
+  // Not Approved (40)
+  { company: "Silverline HVAC Solutions",        status: "Not Approved",              risk: "High Risk",   ins: "Expired" },
+  { company: "Maxim Electrical Contractors",     status: "Not Approved",              risk: "High Risk",   ins: "Expired" },
+  { company: "Crestwood Landscape Svc.",         status: "Not Approved",              risk: "Low Risk",    ins: "Expired" },
+  { company: "BluePeak Fabrication",             status: "Not Approved",              risk: "Medium Risk", ins: "Expired" },
+  { company: "Vanguard Safety Corp.",            status: "Not Approved",              risk: "High Risk",   ins: "Expired" },
+  { company: "Frontier Fluid Systems",           status: "Not Approved",              risk: "Low Risk",    ins: "Expired" },
+  { company: "Summit Tech Repair LLC",           status: "Not Approved",              risk: "Medium Risk", ins: "Expired" },
+  { company: "Ironbridge Industrial",            status: "Not Approved",              risk: "High Risk",   ins: "Expired" },
+  { company: "Nexus Crane Services",             status: "Not Approved",              risk: "High Risk",   ins: "Expired" },
+  { company: "TrueBlue Painting Crew",           status: "Not Approved",              risk: "Low Risk",    ins: "Expired" },
+  { company: "Coastal Electrical Group",         status: "Not Approved",              risk: "High Risk",   ins: "Expired" },
+  { company: "Greenway Environmental",           status: "Not Approved",              risk: "Medium Risk", ins: "Expired" },
+  { company: "Diamond Maintenance LLC",          status: "Not Approved",              risk: "Low Risk",    ins: "Expired" },
+  { company: "RiteTemp HVAC Partners",           status: "Not Approved",              risk: "High Risk",   ins: "Expired" },
+  { company: "Blackstone Industrial Svc.",       status: "Not Approved",              risk: "High Risk",   ins: "Expired" },
+  { company: "Pacific West Contractors",         status: "Not Approved",              risk: "Low Risk",    ins: "" },
+  { company: "PrimeLine Plumbing Co.",           status: "Not Approved",              risk: "Medium Risk", ins: "Expired" },
+  { company: "TruePower Energy Services",        status: "Not Approved",              risk: "High Risk",   ins: "Expired" },
+  { company: "Liberty Fire & Safety",            status: "Not Approved",              risk: "Medium Risk", ins: "Expired" },
+  { company: "Precision Welding Inc.",           status: "Not Approved",              risk: "High Risk",   ins: "Expired" },
+  { company: "Maple Industrial LLC",             status: "Not Approved",              risk: "Low Risk",    ins: "" },
+  { company: "Torchbearer Safety Group",         status: "Not Approved",              risk: "High Risk",   ins: "Expired" },
+  { company: "GreenShield Pest Solutions",       status: "Not Approved",              risk: "Low Risk",    ins: "Expired" },
+  { company: "Redwood Roofing Contractors",      status: "Not Approved",              risk: "Medium Risk", ins: "Expired" },
+  { company: "Stronghold Security LLC",          status: "Not Approved",              risk: "High Risk",   ins: "Expired" },
+  { company: "SkyBridge Crane & Rigging",        status: "Not Approved",              risk: "High Risk",   ins: "Expired" },
+  { company: "Clearview Window Services",        status: "Not Approved",              risk: "Low Risk",    ins: "" },
+  { company: "AquaPure Water Systems",           status: "Not Approved",              risk: "Medium Risk", ins: "Expired" },
+  { company: "Precision Hydraulics Corp",        status: "Not Approved",              risk: "High Risk",   ins: "Expired" },
+  { company: "Westgate Industrial Partners",     status: "Not Approved",              risk: "High Risk",   ins: "Expired" },
+  { company: "Cornerstone Electrical Svc.",      status: "Not Approved",              risk: "Medium Risk", ins: "Expired" },
+  { company: "NovaBridge Maintenance",           status: "Not Approved",              risk: "Low Risk",    ins: "" },
+  { company: "Apex Pipe & Valve Co.",            status: "Not Approved",              risk: "High Risk",   ins: "Expired" },
+  { company: "Broadline Calibration Svc.",       status: "Not Approved",              risk: "Low Risk",    ins: "Expired" },
+  { company: "Imperial Facilities Group",        status: "Not Approved",              risk: "High Risk",   ins: "Expired" },
+  { company: "Steelmark Fabrication LLC",        status: "Not Approved",              risk: "Medium Risk", ins: "Expired" },
+  { company: "Keystone Automation Inc.",         status: "Not Approved",              risk: "High Risk",   ins: "Expired" },
+  { company: "FlexLine Conveyor Svc.",           status: "Not Approved",              risk: "Low Risk",    ins: "Expired" },
+  { company: "Goldstone Janitorial Corp.",       status: "Not Approved",              risk: "Low Risk",    ins: "" },
+  { company: "Polaris Engineering Group",        status: "Not Approved",              risk: "High Risk",   ins: "Expired" },
+];
+
+let filtered = [...contractors];
+let currentPage = 1;
+const pageSize = 20;
+
+function statusClass(s) {
+  if (s === 'Approved') return 'badge-approved';
+  if (s === 'Approved with Restrictions') return 'badge-restriction';
+  if (s === 'Not Approved') return 'badge-not-approved';
+  return 'badge-pending';
+}
+
+function riskClass(r) {
+  if (r === 'Low Risk') return 'low';
+  if (r === 'High Risk') return 'high';
+  return 'medium';
+}
+
+function renderTable() {
+  const tbody = document.getElementById('table-body');
+  const start = (currentPage - 1) * pageSize;
+  const end = Math.min(start + pageSize, filtered.length);
+  const slice = filtered.slice(start, end);
+  tbody.innerHTML = slice.map(r => `
+    <tr>
+      <td>${r.company}</td>
+      <td><span class="${statusClass(r.status)}">${r.status}</span></td>
+      <td><span class="risk ${riskClass(r.risk)}">${r.risk}</span></td>
+      <td>${r.ins === 'Expired' ? '<span class="ins-expired"><span class="ins-dot"></span>Expired</span>' : ''}</td>
+    </tr>
+  `).join('');
+  document.getElementById('page-info').textContent = `Showing ${start + 1}–${end} of ${filtered.length}`;
+  renderPagination();
+}
+
+function renderPagination() {
+  const totalPages = Math.ceil(filtered.length / pageSize);
+  const container = document.getElementById('page-btns');
+  container.innerHTML = '';
+  for (let i = 1; i <= totalPages; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'page-btn' + (i === currentPage ? ' active' : '');
+    btn.textContent = i;
+    btn.onclick = () => { currentPage = i; renderTable(); };
+    container.appendChild(btn);
+  }
+}
+
+function renderCards() {
+  const grid = document.getElementById('cards-grid');
+  grid.innerHTML = filtered.map(r => `
+    <div class="contractor-card">
+      <div class="card-company">${r.company}</div>
+      <div class="card-row"><span class="card-lbl">Compliance</span><span class="card-val ${statusClass(r.status)}">${r.status}</span></div>
+      <div class="card-row"><span class="card-lbl">Risk Class</span><span class="card-val risk ${riskClass(r.risk)}">${r.risk}</span></div>
+      <div class="card-row"><span class="card-lbl">Insurance</span>${r.ins === 'Expired' ? '<span class="ins-expired"><span class="ins-dot"></span>Expired</span>' : '<span class="card-val" style="color:#2e7d5e">Valid</span>'}</div>
+    </div>
+  `).join('');
+}
+
+function applyFilter() {
+  const selects = document.querySelectorAll('.filter-select');
+  const statusF = selects[0].value;
+  const riskF = selects[1].value;
+  const insF = selects[2].value;
+  filtered = contractors.filter(r =>
+    (!statusF || r.status === statusF) &&
+    (!riskF || r.risk === riskF) &&
+    (!insF || (insF === 'Expired' ? r.ins === 'Expired' : r.ins !== 'Expired'))
+  );
+  currentPage = 1;
+  renderTable();
+  renderCards();
+}
+
+function searchTable(q) {
+  const term = q.toLowerCase();
+  filtered = contractors.filter(r => r.company.toLowerCase().includes(term));
+  currentPage = 1;
+  renderTable();
+  renderCards();
+}
+
+function sortTable(col) {
+  const keys = ['company', 'status', 'risk', 'ins'];
+  filtered.sort((a, b) => String(a[keys[col]]).localeCompare(String(b[keys[col]])));
+  renderTable();
+}
+
+function switchView(v, btn) {
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('table-view').style.display = v === 'table' ? 'block' : 'none';
+  document.getElementById('cards-view').style.display = v === 'cards' ? 'block' : 'none';
+}
+
+// Init
+renderTable();
+renderCards();
+</script>
+</body>
+</html>
